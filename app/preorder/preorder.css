@@ -1,0 +1,781 @@
+/* Generated from the standalone preorder page by port.py.
+   Every custom property is --ftp-* and every rule is scoped to .ftp so
+   nothing here can reach the app's Tailwind theme. */
+/* ---------- tokens ---------- */
+.ftp {
+  --ftp-paper:      #F5F2ED;
+  --ftp-paper-deep: #EAE4D9;
+  --ftp-card:       #FBFAF7;
+  --ftp-ink:        #2C2C28;
+  --ftp-ink-strong: #1A1A18;
+  /* darkened from the site's #8A8271, which reads 3.0-3.6:1 on these creams
+     and misses WCAG AA for body text; this clears 4.5:1 on all three */
+  --ftp-ink-soft:   #6A6352;
+  --ftp-line:       #E4DDCE;
+  --ftp-sage:       #8B9E7E;
+  --ftp-sage-ink:   #5F7350;
+  --ftp-bronze:     #A0845C;
+  --ftp-bronze-ink: #7C6544;
+  /* cream on bronze is 3.4:1; dark ink on the same bronze is 4.9:1, so the
+     brand colour survives and only the label flips - which is what dark mode
+     was already doing */
+  --ftp-on-bronze:  #1A1A18;
+
+  --ftp-ball-pent:  #2C2C28;
+  --ftp-ball-hex:   #FBFAF7;
+  --ftp-ball-edge:  #D9D1C0;
+
+  --ftp-wrap: 1240px;
+  --ftp-pad: 32px;
+
+  --ftp-step--1: 0.8125rem;
+  --ftp-step-0:  1.0625rem;
+  --ftp-step-1:  1.3125rem;
+  --ftp-step-2:  1.75rem;
+  --ftp-step-3:  2.5rem;
+  --ftp-step-4:  clamp(2.75rem, 6.2vw, 5.25rem);
+
+  --ftp-sans: var(--font-inter), ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ftp-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --ftp-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+:is(.dark) .ftp {
+  --ftp-paper:      #1A1A18;
+  --ftp-paper-deep: #222220;
+  --ftp-card:       #2C2C28;
+  --ftp-ink:        #F5F2ED;
+  --ftp-ink-strong: #FFFFFF;
+  --ftp-ink-soft:   #A8A08C;
+  --ftp-line:       #3D3D37;
+  --ftp-sage:       #9DB08F;
+  --ftp-sage-ink:   #B4C5A6;
+  --ftp-bronze:     #C2A877;
+  --ftp-bronze-ink: #D6BE92;
+  --ftp-on-bronze:  #1A1A18;
+
+  --ftp-ball-pent:  #100F0E;
+  --ftp-ball-hex:   #E8E2D6;
+  --ftp-ball-edge:  #3D3D37;
+}
+/* ---------- base ---------- */
+.ftp, .ftp *, .ftp *::before, .ftp *::after { box-sizing: border-box; }
+html.ftp-snap { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+.ftp {
+  margin: 0;
+  background: var(--ftp-paper);
+  color: var(--ftp-ink);
+  font-family: var(--ftp-sans);
+  font-size: var(--ftp-step-0);
+  line-height: 1.65;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+.ftp h1, .ftp h2, .ftp h3 {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.ftp p { margin: 0; }
+.ftp a { color: inherit; }
+.ftp :where(a, .ftp button, .ftp input, .ftp select, .ftp summary):focus-visible {
+  outline: 2px solid var(--ftp-bronze);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.ftp .wrap {
+  max-width: var(--ftp-wrap);
+  margin-inline: auto;
+  padding-inline: var(--ftp-pad);
+}
+.ftp .eyebrow {
+  font-family: var(--ftp-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ftp-ink-soft);
+}
+.ftp .lede {
+  font-size: var(--ftp-step-1);
+  line-height: 1.55;
+  color: var(--ftp-ink-soft);
+  max-width: 34ch;
+}
+.ftp .num { font-variant-numeric: tabular-nums; }
+/* ---------- nav ---------- */
+.ftp .nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--ftp-paper) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s var(--ftp-ease);
+}
+.ftp .nav.is-stuck { border-bottom-color: var(--ftp-line); }
+.ftp .nav__in {
+  max-width: var(--ftp-wrap);
+  margin-inline: auto;
+  padding: 14px var(--ftp-pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ftp .mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+.ftp .mark svg { display: block; }
+.ftp .nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ftp .navLink {
+  font-size: var(--ftp-step--1);
+  font-weight: 600;
+  color: var(--ftp-ink);
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ftp .navLink:hover { background: var(--ftp-paper-deep); }
+.ftp .iconBtn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ftp-ink);
+  cursor: pointer;
+}
+.ftp .iconBtn:hover { background: var(--ftp-paper-deep); }
+/* no display here: `.iconBtn svg` outranks `.iconBtn__sun` on specificity and
+   would force both glyphs visible */
+.ftp .iconBtn svg { width: 18px; height: 18px; }
+/* only one glyph is ever shown, and it shows the theme you get by pressing it
+   rather than the one you are already in */
+.ftp .iconBtn__sun { display: none; }
+.ftp .iconBtn__moon { display: block; }
+.ftp .iconBtn[aria-pressed="true"] .iconBtn__sun { display: block; }
+.ftp .iconBtn[aria-pressed="true"] .iconBtn__moon { display: none; }
+/* ---------- buttons ---------- */
+.ftp .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.22s var(--ftp-ease), border-color 0.22s var(--ftp-ease),
+              color 0.22s var(--ftp-ease), transform 0.22s var(--ftp-ease);
+}
+.ftp .btn--solid {
+  background: var(--ftp-bronze);
+  color: var(--ftp-on-bronze);
+}
+.ftp .btn--solid:hover { background: var(--ftp-bronze-ink); transform: translateY(-1px); }
+.ftp .btn--ghost {
+  border-color: var(--ftp-line);
+  color: var(--ftp-ink);
+  background: transparent;
+}
+.ftp .btn--ghost:hover { border-color: var(--ftp-ink-soft); background: var(--ftp-card); }
+.ftp .btn--wide { width: 100%; }
+/* ---------- ball layer ---------- */
+.ftp .ballLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--ftp-ease);
+}
+.ftp .ballLayer.is-live { opacity: 1; }
+.ftp .ballLayer canvas { display: block; width: 100%; height: 100%; }
+.ftp .ballVeil { display: none; }
+/* ---------- step rail ---------- */
+.ftp .rail {
+  position: fixed;
+  left: max(18px, calc((100vw - var(--ftp-wrap)) / 2 - 4px));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ftp-ease);
+}
+.ftp .rail.is-live { opacity: 1; }
+.ftp .rail span {
+  width: 2px;
+  height: 26px;
+  border-radius: 2px;
+  background: var(--ftp-line);
+  transition: background-color 0.35s var(--ftp-ease), height 0.35s var(--ftp-ease);
+}
+.ftp .rail span.on { background: var(--ftp-bronze); height: 34px; }
+/* ---------- scroll snap ---------- */
+/* One part per scroll, so you never come to rest halfway between two steps.
+   A section taller than the screen stays freely scrollable: the spec only
+   holds a snap position while the whole section fits the viewport. The footer
+   anchors to the end, which is what keeps the bottom of the page reachable
+   under a mandatory snap. */
+html.ftp-snap { scroll-snap-type: y mandatory; }
+.ftp .hero, .ftp .feat {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.ftp .sample, .ftp .pricing, .ftp .order { scroll-snap-align: start; }
+.ftp .foot { scroll-snap-align: end; }
+/* ---------- stage ---------- */
+.ftp .stage { position: relative; z-index: 1; }
+.ftp .stage__in {
+  max-width: var(--ftp-wrap);
+  margin-inline: auto;
+  padding-inline: var(--ftp-pad);
+}
+.ftp .hero {
+  /* exactly one screen, so snapping to its top centres the copy */
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 26px;
+  padding: 72px 0 88px;
+  max-width: 33rem;
+}
+.ftp .hero h1 {
+  font-size: var(--ftp-step-4);
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+.ftp .hero__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.ftp .hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: var(--ftp-step--1);
+  color: var(--ftp-ink-soft);
+}
+.ftp .hero__meta b { color: var(--ftp-ink); font-weight: 600; }
+/* feature blocks */
+.ftp .feat {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  max-width: 33rem;
+  padding: 40px 0;
+}
+/* the copy sits opposite the ball and trades sides with it on each step */
+.ftp .feat--left { margin-right: auto; --ftp-rise-x: -22px; }
+.ftp .feat--right { margin-left: auto;  --ftp-rise-x:  22px; }
+.ftp .feat__tag {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ftp .feat__tag i {
+  font-style: normal;
+  font-family: var(--ftp-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--ftp-on-bronze);
+  background: var(--ftp-bronze);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-variant-numeric: tabular-nums;
+}
+.ftp .feat h2 { font-size: var(--ftp-step-3); }
+.ftp .feat p {
+  color: var(--ftp-ink-soft);
+  max-width: 46ch;
+  font-size: var(--ftp-step-0);
+}
+.ftp .feat__read {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 9px 15px;
+  border: 1px solid var(--ftp-line);
+  border-radius: 10px;
+  background: var(--ftp-card);
+  align-self: flex-start;
+}
+.ftp .feat__read b {
+  font-size: var(--ftp-step-2);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ftp-ink);
+  line-height: 1;
+}
+.ftp .feat__read span {
+  font-family: var(--ftp-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ftp-ink-soft);
+}
+/* reveal - content stays visible unless JS has confirmed it can reveal it again */
+.ftp .rise { transition: opacity 0.6s var(--ftp-ease), transform 0.6s var(--ftp-ease); }
+.ftp.is-revealing .rise { opacity: 0; transform: translate(var(--ftp-rise-x, 0px), 14px); }
+.ftp.is-revealing .rise.in { opacity: 1; transform: none; }
+/* ---------- sample card ---------- */
+.ftp .sample {
+  position: relative;
+  z-index: 1;
+  background: var(--ftp-paper-deep);
+  border-block: 1px solid var(--ftp-line);
+  padding: 88px 0;
+  margin-top: 40px;
+}
+.ftp .sample__head {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 40rem;
+  margin-bottom: 40px;
+}
+.ftp .sample__head h2 { font-size: var(--ftp-step-3); }
+.ftp .sample__head p { color: var(--ftp-ink-soft); max-width: 52ch; }
+.ftp .cardRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.ftp .stat {
+  background: var(--ftp-card);
+  border: 1px solid var(--ftp-line);
+  border-radius: 18px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ftp .stat__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ftp .stat__ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--ftp-paper-deep);
+  display: grid;
+  place-items: center;
+  color: var(--ftp-bronze);
+}
+.ftp .stat__ico svg { width: 17px; height: 17px; display: block; }
+.ftp .stat__delta {
+  font-size: var(--ftp-step--1);
+  font-weight: 600;
+  color: var(--ftp-sage-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ftp .stat__val {
+  font-size: var(--ftp-step-3);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+/* a band is a word, and words want a little less optical size than digits */
+.ftp .stat__val--word {
+  font-size: var(--ftp-step-2);
+  letter-spacing: -0.025em;
+  color: var(--ftp-sage-ink);
+}
+.ftp .stat__val em {
+  font-style: normal;
+  font-size: var(--ftp-step-0);
+  font-weight: 500;
+  color: var(--ftp-ink-soft);
+  letter-spacing: 0;
+  margin-left: 3px;
+}
+.ftp .stat__label { font-size: var(--ftp-step--1); color: var(--ftp-ink-soft); }
+.ftp .sample__note {
+  margin-top: 18px;
+  font-size: var(--ftp-step--1);
+  color: var(--ftp-ink-soft);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.ftp .sample__note svg { flex: none; width: 15px; height: 15px; margin-top: 3px; color: var(--ftp-bronze); }
+/* ---------- pricing ---------- */
+.ftp .pricing {
+  position: relative;
+  z-index: 1;
+  background: var(--ftp-paper); /* opaque: the ball canvas is fixed behind everything */
+  padding: 96px 0;
+}
+.ftp .pricing__head {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 40rem;
+  margin-bottom: 44px;
+}
+.ftp .pricing__head h2 { font-size: var(--ftp-step-3); }
+.ftp .pricing__head p { color: var(--ftp-ink-soft); max-width: 52ch; }
+.ftp .plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+.ftp .plan {
+  border-radius: 24px;
+  border: 1px solid var(--ftp-line);
+  background: var(--ftp-card);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* The featured card inverts against the page in both themes, so every tone on it
+   is mixed from its own ground rather than hardcoded. */
+.ftp .plan--dark {
+  background: var(--ftp-ink-strong);
+  border-color: var(--ftp-ink-strong);
+  color: var(--ftp-paper);
+}
+.ftp .plan--dark .plan__sub, .ftp .plan--dark .plan__per, .ftp .plan--dark .plan__foot {
+  color: color-mix(in srgb, var(--ftp-paper) 66%, var(--ftp-ink-strong));
+}
+.ftp .plan__name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ftp-step-1);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.ftp .plan__badge {
+  font-family: var(--ftp-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--ftp-sage);
+  color: #1A1A18; /* sage is a mid tone in both themes; dark text always clears AA */
+  font-weight: 600;
+}
+.ftp .plan__price {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ftp .plan__price b {
+  font-size: clamp(2.5rem, 5vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ftp .plan__per { font-size: var(--ftp-step--1); color: var(--ftp-ink-soft); }
+.ftp .plan__sub { font-size: var(--ftp-step--1); color: var(--ftp-ink-soft); }
+.ftp .plan ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  font-size: 0.9375rem;
+  flex: 1;
+}
+.ftp .plan li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+.ftp .plan li svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  color: var(--ftp-sage-ink);
+}
+.ftp .plan--dark li svg { color: color-mix(in srgb, var(--ftp-sage) 62%, var(--ftp-paper)); }
+.ftp .plan--dark .btn--solid { background: var(--ftp-bronze); color: var(--ftp-on-bronze); }
+.ftp .plan__foot {
+  font-size: var(--ftp-step--1);
+  color: var(--ftp-ink-soft);
+  text-align: center;
+}
+.ftp .trialLine {
+  margin-top: 26px;
+  font-size: var(--ftp-step--1);
+  color: var(--ftp-ink-soft);
+  text-align: center;
+}
+.ftp .trialLine b { color: var(--ftp-ink); font-weight: 600; }
+/* ---------- preorder ---------- */
+.ftp .order {
+  position: relative;
+  z-index: 1;
+  background: var(--ftp-paper-deep);
+  border-top: 1px solid var(--ftp-line);
+  padding: 92px 0;
+}
+.ftp .order__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+.ftp .order__copy { display: flex; flex-direction: column; gap: 16px; }
+.ftp .order__copy h2 { font-size: var(--ftp-step-3); }
+.ftp .order__copy > p { color: var(--ftp-ink-soft); max-width: 42ch; }
+.ftp .faq { margin-top: 14px; display: flex; flex-direction: column; }
+.ftp .faq details {
+  border-top: 1px solid var(--ftp-line);
+  padding: 14px 0;
+}
+.ftp .faq details:last-child { border-bottom: 1px solid var(--ftp-line); }
+.ftp .faq summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.ftp .faq summary::-webkit-details-marker { display: none; }
+.ftp .faq summary::after {
+  content: "";
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-right: 1.5px solid var(--ftp-ink-soft);
+  border-bottom: 1.5px solid var(--ftp-ink-soft);
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.25s var(--ftp-ease);
+}
+.ftp .faq details[open] summary::after { transform: rotate(-135deg) translateY(-2px); }
+.ftp .faq p {
+  margin-top: 9px;
+  font-size: 0.9375rem;
+  color: var(--ftp-ink-soft);
+  max-width: 48ch;
+}
+.ftp .form {
+  background: var(--ftp-card);
+  border: 1px solid var(--ftp-line);
+  border-radius: 24px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.ftp .field { display: flex; flex-direction: column; gap: 7px; }
+.ftp .field label {
+  font-size: var(--ftp-step--1);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.ftp .field input, .ftp .field select {
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--ftp-ink);
+  background: var(--ftp-paper);
+  border: 1px solid var(--ftp-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 46px;
+  transition: border-color 0.2s var(--ftp-ease);
+}
+.ftp .field input:hover, .ftp .field select:hover { border-color: var(--ftp-ink-soft); }
+.ftp .field input::placeholder { color: var(--ftp-ink-soft); opacity: 0.75; }
+.ftp .field small { font-size: 0.75rem; color: var(--ftp-ink-soft); }
+.ftp .pick { display: flex; flex-direction: column; gap: 8px; }
+.ftp .pick > span {
+  font-size: var(--ftp-step--1);
+  font-weight: 600;
+}
+.ftp .pick__opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ftp .pick label {
+  border: 1px solid var(--ftp-line);
+  border-radius: 12px;
+  padding: 11px 13px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: border-color 0.2s var(--ftp-ease), background-color 0.2s var(--ftp-ease);
+}
+.ftp .pick label:hover { border-color: var(--ftp-ink-soft); }
+.ftp .pick label b { font-weight: 600; }
+.ftp .pick label em {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--ftp-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.ftp .pick input { position: absolute; opacity: 0; pointer-events: none; }
+.ftp .pick input:checked + label {
+  border-color: var(--ftp-bronze);
+  background: color-mix(in srgb, var(--ftp-bronze) 10%, transparent);
+}
+.ftp .pick input:focus-visible + label { outline: 2px solid var(--ftp-bronze); outline-offset: 2px; }
+.ftp .form__fine { font-size: 0.75rem; color: var(--ftp-ink-soft); text-align: center; }
+.ftp .form__fine a { color: var(--ftp-ink); text-underline-offset: 2px; }
+/* Unticked by default and checked in the submit handler: consent that is
+   pre-ticked, or bundled into "by continuing you agree", is not consent. */
+.ftp .consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ftp-ink-soft);
+  cursor: pointer;
+}
+.ftp .consent input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: var(--ftp-bronze);
+}
+.ftp .consent.is-missing { color: var(--ftp-ink); }
+.ftp .consent.is-missing input { outline: 2px solid var(--ftp-bronze); outline-offset: 2px; }
+.ftp .done {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  text-align: center;
+  padding: 26px 10px;
+}
+.ftp .done svg { width: 40px; height: 40px; color: var(--ftp-sage-ink); }
+.ftp .done h3 { font-size: var(--ftp-step-2); }
+.ftp .done p { color: var(--ftp-ink-soft); font-size: 0.9375rem; max-width: 34ch; }
+.ftp .form.is-done .form__body { display: none; }
+.ftp .form.is-done .done { display: flex; }
+/* ---------- footer ---------- */
+.ftp .foot {
+  position: relative;
+  z-index: 1;
+  background: var(--ftp-paper);
+  border-top: 1px solid var(--ftp-line);
+  padding: 34px 0;
+  font-size: var(--ftp-step--1);
+  color: var(--ftp-ink-soft);
+}
+.ftp .foot__in {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ftp .foot__links { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.ftp .foot__links a { color: var(--ftp-ink); text-underline-offset: 2px; }
+/* ---------- responsive ---------- */
+@media (max-width: 900px) {
+.ftp { --ftp-pad: 20px; }
+.ftp .rail { display: none; }
+/* On phones the ball becomes a fixed header: it sits ABOVE the copy and the
+     veil behind it wipes outgoing text as it scrolls up and out. */
+.ftp .ballLayer { z-index: 3; }
+.ftp .ballLayer canvas { position: relative; z-index: 1; }
+.ftp .ballVeil {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 44vh;
+    background: linear-gradient(to bottom,
+      var(--ftp-paper) 0%, var(--ftp-paper) 66%,
+      color-mix(in srgb, var(--ftp-paper) 50%, transparent) 86%,
+      transparent 100%);
+  }
+/* tighter than the desktop rhythm so a step lands inside one phone screen
+     and the snap has somewhere exact to stop */
+.ftp .hero {
+    min-height: 100svh;
+    padding-top: 44vh;
+    padding-bottom: 28px;
+    max-width: none;
+    gap: 20px;
+  }
+.ftp .feat {
+    min-height: 100svh;
+    padding: 44vh 0 5vh;
+    max-width: none;
+  }
+/* one column at this width, so the copy stops trading sides */
+.ftp .feat--left, .ftp .feat--right { margin-inline: 0; --ftp-rise-x: 0px; }
+.ftp .feat p { max-width: none; }
+.ftp .order__grid { grid-template-columns: 1fr; gap: 38px; }
+.ftp .hero__cta .btn { flex: 1 1 auto; }
+}
+@media (max-width: 480px) {
+.ftp .pick__opts { grid-template-columns: 1fr; }
+.ftp .plan, .ftp .form { padding: 24px; }
+/* four things in the bar at 390px: keep them all reachable rather than
+     hiding log in, which is the one a returning player comes back for */
+.ftp .nav__in { gap: 8px; }
+.ftp .nav__actions { gap: 2px; }
+.ftp .navLink { padding: 10px 8px; }
+.ftp .nav__actions .btn { padding: 10px 14px; }
+.ftp .mark { font-size: 0.875rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+html.ftp-snap { scroll-behavior: auto; }
+.ftp, .ftp *, .ftp *::before, .ftp *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+.ftp.is-revealing .rise, .ftp.is-revealing .rise.in { opacity: 1; transform: none; }
+}
