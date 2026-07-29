@@ -136,6 +136,43 @@ html.ftp-snap { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   font-size: 0.9375rem;
 }
 .ftp .mark svg { display: block; }
+.ftp .nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ftp .navLink {
+  font-size: var(--ftp-step--1);
+  font-weight: 600;
+  color: var(--ftp-ink);
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ftp .navLink:hover { background: var(--ftp-paper-deep); }
+.ftp .iconBtn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ftp-ink);
+  cursor: pointer;
+}
+.ftp .iconBtn:hover { background: var(--ftp-paper-deep); }
+/* no display here: `.iconBtn svg` outranks `.iconBtn__sun` on specificity and
+   would force both glyphs visible */
+.ftp .iconBtn svg { width: 18px; height: 18px; }
+/* only one glyph is ever shown, and it shows the theme you get by pressing it
+   rather than the one you are already in */
+.ftp .iconBtn__sun { display: none; }
+.ftp .iconBtn__moon { display: block; }
+.ftp .iconBtn[aria-pressed="true"] .iconBtn__sun { display: block; }
+.ftp .iconBtn[aria-pressed="true"] .iconBtn__moon { display: none; }
 /* ---------- buttons ---------- */
 .ftp .btn {
   display: inline-flex;
@@ -726,6 +763,13 @@ html.ftp-snap { scroll-snap-type: y mandatory; }
 @media (max-width: 480px) {
 .ftp .pick__opts { grid-template-columns: 1fr; }
 .ftp .plan, .ftp .form { padding: 24px; }
+/* four things in the bar at 390px: keep them all reachable rather than
+     hiding log in, which is the one a returning player comes back for */
+.ftp .nav__in { gap: 8px; }
+.ftp .nav__actions { gap: 2px; }
+.ftp .navLink { padding: 10px 8px; }
+.ftp .nav__actions .btn { padding: 10px 14px; }
+.ftp .mark { font-size: 0.875rem; }
 }
 @media (prefers-reduced-motion: reduce) {
 html.ftp-snap { scroll-behavior: auto; }

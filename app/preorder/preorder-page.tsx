@@ -25,7 +25,14 @@ export function PreorderPage() {
             </svg>
             FirstTouch
           </a>
-          <a className="btn btn--solid" href="#preorder">Preorder</a>
+          <div className="nav__actions">
+            <button className="iconBtn" id="ftp-themeBtn" type="button" aria-pressed="false" aria-label="Switch to dark theme">
+              <svg className="iconBtn__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M6.3 6.3 4.8 4.8M19.2 19.2l-1.5-1.5M17.7 6.3l1.5-1.5M4.8 19.2l1.5-1.5"/></svg>
+              <svg className="iconBtn__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a6.9 6.9 0 0 0 10.8 10.8z"/></svg>
+            </button>
+            <a className="navLink" id="ftp-loginLink" href="/">Log in</a>
+            <a className="btn btn--solid" href="#preorder">Sign up</a>
+          </div>
         </div>
       </header>
       <div className="ballLayer" id="ftp-ballLayer" aria-hidden="true">

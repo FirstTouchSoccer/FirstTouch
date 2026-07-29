@@ -721,6 +721,43 @@ export function mountBall(root: HTMLElement): () => void {
     on(window, "scroll", onScroll, { passive: true });
     onScroll();
 
+    /* ---------------- theme toggle ---------------- */
+    /* Writes the class, the attribute and next-themes' storage key at once, so
+       the same handler drives the standalone page (which reads [data-theme]) and
+       the app route (where next-themes owns a .dark/.light class on <html>). */
+    var themeBtn = root.querySelector<HTMLButtonElement>("#ftp-themeBtn")!;
+    var docEl = document.documentElement;
+
+    /* persist only on a real press: writing at load would turn a visitor whose
+       app is set to follow the system into an explicit light or dark choice, and
+       that setting is shared with the rest of the app */
+    function applyTheme(dark: boolean, persist: boolean) {
+      docEl.classList.toggle("dark", dark);
+      docEl.classList.toggle("light", !dark);
+      docEl.setAttribute("data-theme", dark ? "dark" : "light");
+      themeBtn.setAttribute("aria-pressed", dark ? "true" : "false");
+      themeBtn.setAttribute("aria-label", dark ? "Switch to light theme" : "Switch to dark theme");
+      if (persist) {
+        try { window.localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+      }
+      palDirty = true;
+    }
+
+    /* an explicit choice already on the document wins; otherwise fall back to
+       the operating system rather than assuming light */
+    applyTheme(
+      docEl.classList.contains("dark") ||
+      docEl.getAttribute("data-theme") === "dark" ||
+      (!docEl.classList.contains("light") &&
+       !docEl.hasAttribute("data-theme") &&
+       window.matchMedia("(prefers-color-scheme: dark)").matches),
+      false
+    );
+
+    on(themeBtn, "click", function () {
+      applyTheme(themeBtn.getAttribute("aria-pressed") !== "true", true);
+    });
+
     /* ---------------- theme ---------------- */
     themeObserver = new MutationObserver(function () { palDirty = true; });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
