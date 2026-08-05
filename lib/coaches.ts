@@ -1,3 +1,8 @@
+// Static roster — illustrative profiles, not real people yet. Nobody edits
+// this at runtime, so it stays a plain module rather than a database table.
+// coach_notes/session_bookings reference coaches by `id`, never by name, so
+// there's exactly one spelling of each coach's name in the whole app.
+
 export type Coach = {
   id: string
   name: string
@@ -50,6 +55,10 @@ export const coaches: Coach[] = [
   },
 ]
 
+export function coachById(id: string): Coach | undefined {
+  return coaches.find((c) => c.id === id)
+}
+
 export const specializationFilters = [
   'All',
   'First Touch',
@@ -58,50 +67,3 @@ export const specializationFilters = [
   'Positioning',
   'Sprint Mechanics',
 ] as const
-
-export type FeedbackNote = {
-  id: string
-  time: string
-  frame: number // 0-100 position on timeline
-  type: 'note' | 'voice' | 'video'
-  coach: string
-  text: string
-  duration?: string
-}
-
-export const feedbackNotes: FeedbackNote[] = [
-  {
-    id: 'n1',
-    time: '0:04',
-    frame: 8,
-    type: 'note',
-    coach: 'Marcus Bell',
-    text: 'Good early body shape, but plant your standing foot closer to the ball before the touch.',
-  },
-  {
-    id: 'n2',
-    time: '0:14',
-    frame: 32,
-    type: 'note',
-    coach: 'Marcus Bell',
-    text: 'Great scanning before receiving — now open your body and hips to the left to play forward faster.',
-  },
-  {
-    id: 'n3',
-    time: '0:23',
-    frame: 55,
-    type: 'voice',
-    coach: 'Marcus Bell',
-    text: 'Voice memo: breaking down your weight transfer on this turn.',
-    duration: '0:38',
-  },
-  {
-    id: 'n4',
-    time: '0:37',
-    frame: 82,
-    type: 'video',
-    coach: 'Marcus Bell',
-    text: 'Video response: here is the same move done at full speed.',
-    duration: '1:12',
-  },
-]

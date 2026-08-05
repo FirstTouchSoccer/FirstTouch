@@ -1,51 +1,59 @@
-import { Footprints, Rocket, Brain, Check } from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { UploadCloud, MessageSquareText, CalendarCheck, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { listBookings, listClips, listCoachNotes } from '@/lib/store'
 
 type Goal = {
   title: string
   detail: string
-  icon: typeof Rocket
-  current: number
-  target: number
+  icon: typeof UploadCloud
   progress: number
-  done?: boolean
+  done: boolean
 }
 
-const goals: Goal[] = [
-  {
-    title: 'Right-Foot Touches',
-    detail: '38 / 50 completed',
-    icon: Footprints,
-    current: 38,
-    target: 50,
-    progress: 76,
-  },
-  {
-    title: 'Power Target',
-    detail: 'Hit >65 mph in Single-Skill Mode',
-    icon: Rocket,
-    current: 1,
-    target: 1,
-    progress: 100,
-    done: true,
-  },
-  {
-    title: 'Tactical Mastery',
-    detail: 'Watch 2 positioning clips',
-    icon: Brain,
-    current: 1,
-    target: 2,
-    progress: 50,
-  },
-]
-
 export function GoalBenchmarks() {
+  const [clipCount, setClipCount] = useState(0)
+  const [noteCount, setNoteCount] = useState(0)
+  const [bookingCount, setBookingCount] = useState(0)
+
+  useEffect(() => {
+    listClips().then((c) => setClipCount(c.length))
+    listCoachNotes().then((n) => setNoteCount(n.length))
+    listBookings().then((b) => setBookingCount(b.filter((x) => x.status === 'booked').length))
+  }, [])
+
+  const goals: Goal[] = [
+    {
+      title: 'Upload Your First Clip',
+      detail: `${Math.min(clipCount, 1)} / 1 completed`,
+      icon: UploadCloud,
+      progress: Math.min(clipCount, 1) * 100,
+      done: clipCount >= 1,
+    },
+    {
+      title: 'Get Coach Feedback',
+      detail: `${Math.min(noteCount, 1)} / 1 completed`,
+      icon: MessageSquareText,
+      progress: Math.min(noteCount, 1) * 100,
+      done: noteCount >= 1,
+    },
+    {
+      title: 'Book a Session',
+      detail: `${Math.min(bookingCount, 1)} / 1 completed`,
+      icon: CalendarCheck,
+      progress: Math.min(bookingCount, 1) * 100,
+      done: bookingCount >= 1,
+    },
+  ]
+
   return (
-    <section className="px-5 pt-8" aria-label="AI goal benchmarks">
+    <section className="px-5 pt-8" aria-label="Goal benchmarks">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">AI Goal Benchmarks</h2>
+        <h2 className="text-sm font-semibold">Getting Started</h2>
         <span className="text-xs font-medium text-muted-foreground">
-          This week
+          {goals.filter((g) => g.done).length} / {goals.length}
         </span>
       </div>
 
@@ -88,7 +96,7 @@ export function GoalBenchmarks() {
                         g.done ? 'text-sage' : 'text-muted-foreground',
                       )}
                     >
-                      {g.done ? 'Goal met' : `${g.progress}%`}
+                      {g.done ? 'Done' : `${g.progress}%`}
                     </span>
                   </div>
                   <p className="truncate text-xs text-muted-foreground">

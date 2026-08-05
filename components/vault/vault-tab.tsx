@@ -1,8 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { Search, Play, Sparkles, ArrowRight } from 'lucide-react'
+import { Search, Play, Sparkles, ArrowRight, Film } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   categories,
@@ -11,12 +11,19 @@ import {
   type Category,
   type Video,
 } from '@/components/vault/vault-data'
-import { VideoPlayer } from '@/components/vault/video-player'
+import { VideoPlayer, type PlayerTarget } from '@/components/vault/video-player'
+import { listClips, resolveVideoUrl } from '@/lib/store'
+import type { Clip } from '@/lib/types'
 
 export function VaultTab() {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState<Category | 'All'>('All')
-  const [selected, setSelected] = useState<Video | null>(null)
+  const [selected, setSelected] = useState<PlayerTarget | null>(null)
+  const [myClips, setMyClips] = useState<Clip[]>([])
+
+  useEffect(() => {
+    listClips().then(setMyClips)
+  }, [])
 
   const filtered = useMemo(() => {
     return videos.filter((v) => {
@@ -33,6 +40,20 @@ export function VaultTab() {
   const recVideos = recommended.videoIds
     .map((id) => videos.find((v) => v.id === id))
     .filter(Boolean) as Video[]
+
+  function openCurated(v: Video) {
+    setSelected({ title: v.title, thumb: v.thumb, tags: v.tags, videoUrl: null })
+  }
+
+  async function openMyClip(clip: Clip) {
+    const videoUrl = await resolveVideoUrl(clip)
+    setSelected({
+      title: clip.title,
+      thumb: clip.thumbnailUrl,
+      tags: [clip.skillTag.replace(/-/g, ' ')],
+      videoUrl,
+    })
+  }
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -54,6 +75,48 @@ export function VaultTab() {
           />
         </div>
       </header>
+
+      {/* Your uploads */}
+      {myClips.length > 0 && (
+        <section className="px-5 pt-6" aria-label="Your uploads">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Your uploads</h2>
+            <span className="text-xs text-muted-foreground">{myClips.length}</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {myClips.map((clip) => (
+              <button
+                key={clip.id}
+                type="button"
+                onClick={() => openMyClip(clip)}
+                className="w-32 shrink-0 overflow-hidden rounded-2xl border border-border bg-card text-left"
+              >
+                <div className="relative aspect-video w-full bg-secondary">
+                  {clip.thumbnailUrl ? (
+                    <Image
+                      src={clip.thumbnailUrl}
+                      alt={clip.title}
+                      fill
+                      className="object-cover"
+                      sizes="128px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Film className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-2">
+                  <p className="truncate text-[11px] font-semibold">{clip.title}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">
+                    {clip.status === 'sent_to_coach' ? 'Sent to coach' : 'Uploaded'}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Category filters */}
       <div className="mt-4 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -96,7 +159,7 @@ export function VaultTab() {
                 <button
                   key={v.id}
                   type="button"
-                  onClick={() => setSelected(v)}
+                  onClick={() => openCurated(v)}
                   className="flex items-center gap-3 rounded-xl bg-card p-2 text-left"
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
@@ -149,7 +212,7 @@ export function VaultTab() {
               <button
                 key={v.id}
                 type="button"
-                onClick={() => setSelected(v)}
+                onClick={() => openCurated(v)}
                 className="overflow-hidden rounded-2xl border border-border bg-card text-left"
               >
                 <div className="relative aspect-video w-full">
@@ -196,7 +259,7 @@ export function VaultTab() {
       </section>
 
       {selected && (
-        <VideoPlayer video={selected} onClose={() => setSelected(null)} />
+        <VideoPlayer target={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   )

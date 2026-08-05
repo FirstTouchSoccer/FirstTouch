@@ -1,26 +1,29 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { Star, BadgeCheck, MessageSquareText, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  coaches,
-  specializationFilters,
-  type Coach,
-} from '@/components/coaches/coaches-data'
+import { coaches, coachById, specializationFilters, type Coach } from '@/lib/coaches'
+import { listCoachNotes } from '@/lib/store'
+import type { CoachNote } from '@/lib/types'
 import { FeedbackHub } from '@/components/coaches/feedback-hub'
 import { BookingFlow } from '@/components/coaches/booking-flow'
 
 type View =
   | { name: 'directory' }
-  | { name: 'feedback' }
+  | { name: 'feedback'; clipId: string }
   | { name: 'booking'; coach: Coach }
 
 export function CoachesTab() {
   const [view, setView] = useState<View>({ name: 'directory' })
   const [filter, setFilter] =
     useState<(typeof specializationFilters)[number]>('All')
+  const [notes, setNotes] = useState<CoachNote[]>([])
+
+  useEffect(() => {
+    listCoachNotes().then(setNotes)
+  }, [])
 
   const filtered = useMemo(() => {
     if (filter === 'All') return coaches
@@ -29,8 +32,21 @@ export function CoachesTab() {
     )
   }, [filter])
 
+  const latestNote = useMemo(
+    () =>
+      [...notes].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )[0],
+    [notes],
+  )
+  const latestNoteCount = latestNote
+    ? notes.filter((n) => n.clipId === latestNote.clipId).length
+    : 0
+
   if (view.name === 'feedback') {
-    return <FeedbackHub onBack={() => setView({ name: 'directory' })} />
+    return (
+      <FeedbackHub clipId={view.clipId} onBack={() => setView({ name: 'directory' })} />
+    )
   }
 
   if (view.name === 'booking') {
@@ -51,25 +67,29 @@ export function CoachesTab() {
         </p>
       </header>
 
-      {/* Feedback hub entry */}
-      <div className="mt-4 px-5">
-        <button
-          type="button"
-          onClick={() => setView({ name: 'feedback' })}
-          className="flex w-full items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left"
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <MessageSquareText className="h-5 w-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">New feedback from Marcus Bell</p>
-            <p className="truncate text-xs text-muted-foreground">
-              4 timestamped notes on your First Touch clip
-            </p>
-          </div>
-          <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-        </button>
-      </div>
+      {/* Feedback hub entry — only shown once real feedback exists */}
+      {latestNote && (
+        <div className="mt-4 px-5">
+          <button
+            type="button"
+            onClick={() => setView({ name: 'feedback', clipId: latestNote.clipId })}
+            className="flex w-full items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <MessageSquareText className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">
+                New feedback from {coachById(latestNote.coachId)?.name ?? 'your coach'}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {latestNoteCount} timestamped note{latestNoteCount === 1 ? '' : 's'} on your clip
+              </p>
+            </div>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </button>
+        </div>
+      )}
 
       {/* Specialization filters */}
       <div className="mt-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

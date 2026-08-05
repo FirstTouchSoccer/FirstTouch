@@ -12,19 +12,46 @@ import {
   CalendarPlus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Coach } from '@/components/coaches/coaches-data'
+import type { Coach } from '@/lib/coaches'
+import { createBooking } from '@/lib/store'
+import type { SessionBooking } from '@/lib/types'
 
 type Step = 'calendar' | 'questionnaire' | 'confirmed'
 
-const days = [
-  { label: 'Mon', date: '12' },
-  { label: 'Tue', date: '13' },
-  { label: 'Wed', date: '14' },
-  { label: 'Thu', date: '15' },
-  { label: 'Fri', date: '16' },
-  { label: 'Sat', date: '17' },
-  { label: 'Sun', date: '18' },
-]
+function buildDays(count = 7): Date[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() + i)
+    return d
+  })
+}
+
+function downloadIcs(booking: SessionBooking, coachName: string) {
+  const start = new Date(booking.startsAt)
+  const end = new Date(start.getTime() + booking.durationMin * 60_000)
+  const fmt = (d: Date) => `${d.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'BEGIN:VEVENT',
+    `UID:${booking.id}@firsttouch`,
+    `DTSTART:${fmt(start)}`,
+    `DTEND:${fmt(end)}`,
+    `SUMMARY:1-on-1 with ${coachName}`,
+    `DESCRIPTION:${booking.focus.join(', ') || 'General review'}`,
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n')
+  const blob = new Blob([ics], { type: 'text/calendar' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'first-touch-session.ics'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 const slots = ['09:00', '10:30', '13:00', '14:30', '16:00', '17:30']
 
@@ -44,16 +71,39 @@ export function BookingFlow({
   coach: Coach
   onBack: () => void
 }) {
+  const [days] = useState(() => buildDays())
   const [step, setStep] = useState<Step>('calendar')
   const [day, setDay] = useState(days[2])
   const [slot, setSlot] = useState<string | null>(null)
   const [focus, setFocus] = useState<string[]>([])
   const [level, setLevel] = useState('Competitive club')
+  const [notes, setNotes] = useState('')
+  const [booking, setBooking] = useState<SessionBooking | null>(null)
+  const [saving, setSaving] = useState(false)
 
   const toggleFocus = (f: string) =>
     setFocus((prev) =>
       prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f],
     )
+
+  async function confirmBooking() {
+    if (!slot) return
+    setSaving(true)
+    const [hours, minutes] = slot.split(':').map(Number)
+    const startsAt = new Date(day)
+    startsAt.setHours(hours, minutes, 0, 0)
+    const created = await createBooking({
+      coachId: coach.id,
+      startsAt: startsAt.toISOString(),
+      durationMin: 45,
+      focus,
+      level,
+      notes: notes || null,
+    })
+    setBooking(created)
+    setSaving(false)
+    setStep('confirmed')
+  }
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -138,25 +188,27 @@ export function BookingFlow({
         <div className="mt-5 px-5">
           <div className="mb-2 flex items-center gap-1.5">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm font-semibold">Select a date · June</p>
+            <p className="text-sm font-semibold">
+              Select a date · {day.toLocaleDateString('en-US', { month: 'long' })}
+            </p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {days.map((d) => (
               <button
-                key={d.date}
+                key={d.toISOString()}
                 type="button"
                 onClick={() => setDay(d)}
                 className={cn(
                   'flex h-16 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border transition-colors',
-                  day.date === d.date
+                  day.getTime() === d.getTime()
                     ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-border bg-card text-foreground',
                 )}
               >
                 <span className="text-[11px] font-medium opacity-80">
-                  {d.label}
+                  {d.toLocaleDateString('en-US', { weekday: 'short' })}
                 </span>
-                <span className="text-base font-bold">{d.date}</span>
+                <span className="text-base font-bold">{d.getDate()}</span>
               </button>
             ))}
           </div>
@@ -260,22 +312,25 @@ export function BookingFlow({
           </label>
           <textarea
             rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. I struggle receiving with my back to goal..."
             className="mt-2 w-full resize-none rounded-2xl border border-border bg-card p-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
           />
 
           <button
             type="button"
-            onClick={() => setStep('confirmed')}
-            className="mt-5 w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground"
+            onClick={confirmBooking}
+            disabled={saving}
+            className="mt-5 w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
-            Confirm booking
+            {saving ? 'Booking…' : 'Confirm booking'}
           </button>
         </div>
       )}
 
       {/* Step: Confirmation */}
-      {step === 'confirmed' && (
+      {step === 'confirmed' && booking && (
         <div className="mt-6 px-5 pb-4 animate-in fade-in zoom-in-95 duration-500">
           <div className="flex flex-col items-center text-center">
             <span className="flex h-16 w-16 items-center justify-center rounded-full bg-accent text-accent-foreground">
@@ -285,8 +340,8 @@ export function BookingFlow({
               Session booked!
             </h2>
             <p className="mt-1 text-sm text-muted-foreground text-balance">
-              You&apos;re all set with {coach.name}. A calendar invite has been
-              sent.
+              You&apos;re all set with {coach.name}. Download the calendar
+              file below to add it to your calendar.
             </p>
           </div>
 
@@ -304,23 +359,35 @@ export function BookingFlow({
               <div>
                 <p className="text-sm font-bold">1-on-1 with {coach.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  Video call · 45 min
+                  Video call · {booking.durationMin} min
                 </p>
               </div>
             </div>
             <dl className="divide-y divide-border text-sm">
               <div className="flex items-center justify-between px-4 py-3">
                 <dt className="text-muted-foreground">Date</dt>
-                <dd className="font-semibold">Wed, June {day.date}</dd>
+                <dd className="font-semibold">
+                  {new Date(booking.startsAt).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </dd>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <dt className="text-muted-foreground">Time</dt>
-                <dd className="font-semibold">{slot} · 45 min</dd>
+                <dd className="font-semibold">
+                  {new Date(booking.startsAt).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}{' '}
+                  · {booking.durationMin} min
+                </dd>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
                 <dt className="text-muted-foreground">Focus</dt>
                 <dd className="max-w-[60%] text-right font-semibold">
-                  {focus.length ? focus.join(', ') : 'General review'}
+                  {booking.focus.length ? booking.focus.join(', ') : 'General review'}
                 </dd>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
@@ -332,6 +399,7 @@ export function BookingFlow({
 
           <button
             type="button"
+            onClick={() => downloadIcs(booking, coach.name)}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-sm font-bold text-foreground"
           >
             <CalendarPlus className="h-4 w-4" />

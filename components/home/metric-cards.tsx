@@ -1,51 +1,69 @@
-import { Zap, Crosshair, Gauge, Flame, ArrowUpRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+'use client'
 
-type Metric = {
-  label: string
-  value: string
-  unit: string
-  delta: string
-  icon: typeof Zap
-  tint: string
+import { useEffect, useState } from 'react'
+import { Film, MessageSquareText, CalendarClock, Flame, ArrowUpRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { listBookings, listClips, listCoachNotes } from '@/lib/store'
+import { computeStreak } from '@/lib/rating'
+import type { Clip, CoachNote, SessionBooking } from '@/lib/types'
+
+function isThisMonth(iso: string, now: Date): boolean {
+  const d = new Date(iso)
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
 }
 
-const metrics: Metric[] = [
-  {
-    label: 'Top Shot Speed',
-    value: '68',
-    unit: 'mph',
-    delta: '+4 mph',
-    icon: Zap,
-    tint: 'text-bronze',
-  },
-  {
-    label: 'Passing Accuracy',
-    value: '84',
-    unit: '%',
-    delta: '+6%',
-    icon: Crosshair,
-    tint: 'text-sage',
-  },
-  {
-    label: 'Max Sprint Speed',
-    value: '27.4',
-    unit: 'km/h',
-    delta: '+1.2',
-    icon: Gauge,
-    tint: 'text-rose',
-  },
-  {
-    label: 'Active Streak',
-    value: '5',
-    unit: 'days',
-    delta: 'On fire',
-    icon: Flame,
-    tint: 'text-bronze',
-  },
-]
-
 export function MetricCards() {
+  const [clips, setClips] = useState<Clip[]>([])
+  const [notes, setNotes] = useState<CoachNote[]>([])
+  const [bookings, setBookings] = useState<SessionBooking[]>([])
+
+  useEffect(() => {
+    listClips().then(setClips)
+    listCoachNotes().then(setNotes)
+    listBookings().then(setBookings)
+  }, [])
+
+  const now = new Date()
+  const clipsThisMonth = clips.filter((c) => isThisMonth(c.createdAt, now)).length
+  const notesThisMonth = notes.filter((n) => isThisMonth(n.createdAt, now)).length
+  const upcoming = bookings.filter((b) => b.status === 'booked' && new Date(b.startsAt) > now)
+  const streak = computeStreak([...clips.map((c) => c.createdAt), ...notes.map((n) => n.createdAt)])
+
+  const metrics = [
+    {
+      label: 'Clips Uploaded',
+      value: String(clips.length),
+      unit: 'total',
+      delta: `+${clipsThisMonth} this month`,
+      icon: Film,
+      tint: 'text-bronze',
+    },
+    {
+      label: 'Coach Notes',
+      value: String(notes.length),
+      unit: 'total',
+      delta: `+${notesThisMonth} this month`,
+      icon: MessageSquareText,
+      tint: 'text-sage',
+    },
+    {
+      label: 'Upcoming Sessions',
+      value: String(upcoming.length),
+      unit: 'booked',
+      delta: upcoming.length > 0 ? 'On the calendar' : 'None booked',
+      icon: CalendarClock,
+      tint: 'text-rose',
+    },
+    {
+      label: 'Active Streak',
+      value: String(streak),
+      unit: 'days',
+      delta: streak >= 3 ? 'On fire' : streak > 0 ? 'Keep it up' : 'Start today',
+      icon: Flame,
+      tint: 'text-bronze',
+    },
+  ]
+
   return (
     <section className="px-5 pt-6" aria-label="Key metrics">
       <div className="grid grid-cols-2 gap-3">

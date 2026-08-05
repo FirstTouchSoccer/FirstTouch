@@ -1,18 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { listClips, listCoachNotes } from '@/lib/store'
+import type { Clip, CoachNote } from '@/lib/types'
 
 const ranges = ['7D', '30D', '90D'] as const
 type Range = (typeof ranges)[number]
-
-// mock daily "First Touch Precision" scores
-const data: Record<Range, number[]> = {
-  '7D': [62, 64, 63, 68, 71, 70, 74],
-  '30D': [58, 60, 59, 63, 61, 66, 65, 69, 68, 72, 70, 74],
-  '90D': [48, 52, 55, 53, 59, 62, 60, 66, 68, 71, 70, 74],
-}
+const rangeDays: Record<Range, number> = { '7D': 7, '30D': 30, '90D': 90 }
 
 const W = 320
 const H = 140
@@ -48,13 +44,53 @@ function buildPath(values: number[]) {
   return { line: d, area, last: points[points.length - 1] }
 }
 
+/** Cumulative real activity (uploads + coach notes) per day, over `days`. */
+function bucketCumulative(dates: string[], days: number): number[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const counts = new Array(days).fill(0)
+  for (const iso of dates) {
+    const d = new Date(iso)
+    d.setHours(0, 0, 0, 0)
+    const diffDays = Math.round((today.getTime() - d.getTime()) / 86400000)
+    const idx = days - 1 - diffDays
+    if (idx >= 0 && idx < days) counts[idx] += 1
+  }
+  let running = 0
+  return counts.map((c) => (running += c))
+}
+
 export function ProgressionChart() {
   const [range, setRange] = useState<Range>('30D')
-  const values = data[range]
+  const [clips, setClips] = useState<Clip[]>([])
+  const [notes, setNotes] = useState<CoachNote[]>([])
+
+  useEffect(() => {
+    listClips().then(setClips)
+    listCoachNotes().then(setNotes)
+  }, [])
+
+  const days = rangeDays[range]
+  const values = useMemo(() => {
+    const dates = [...clips.map((c) => c.createdAt), ...notes.map((n) => n.createdAt)]
+    return bucketCumulative(dates, days)
+  }, [clips, notes, days])
+
+  const total = values[values.length - 1] ?? 0
   const { line, area, last } = useMemo(() => buildPath(values), [values])
-  const gain = Math.round(
-    ((values[values.length - 1] - values[0]) / values[0]) * 100,
-  )
+
+  if (total === 0) {
+    return (
+      <section className="px-5 pt-6" aria-label="Form and progression">
+        <div className="rounded-3xl border border-border bg-card p-5 text-center">
+          <h2 className="text-sm font-semibold">Form &amp; Progression</h2>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Upload your first clip to start tracking activity over time.
+          </p>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="px-5 pt-6" aria-label="Form and progression">
@@ -66,8 +102,8 @@ export function ProgressionChart() {
             </div>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5 text-sage" />
-              <span className="font-semibold text-sage">+{gain}%</span>
-              First Touch Precision
+              <span className="font-semibold text-sage">{total}</span>
+              uploads &amp; notes in the last {range}
             </p>
           </div>
           <div className="flex gap-1 rounded-full bg-secondary p-1">
@@ -94,7 +130,7 @@ export function ProgressionChart() {
             viewBox={`0 0 ${W} ${H}`}
             className="h-36 w-full"
             role="img"
-            aria-label={`First touch precision trend over ${range}`}
+            aria-label={`Activity trend over ${range}`}
             preserveAspectRatio="none"
           >
             <defs>

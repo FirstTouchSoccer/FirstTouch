@@ -8,9 +8,10 @@ type Props = {
   steps: string[]
   onComplete: () => void
   stepMs?: number
+  title?: string
 }
 
-export function AiLoader({ steps, onComplete, stepMs = 1100 }: Props) {
+export function AiLoader({ steps, onComplete, stepMs = 1100, title = 'Saving your clip' }: Props) {
   const [active, setActive] = useState(0)
 
   useEffect(() => {
@@ -31,9 +32,9 @@ export function AiLoader({ steps, onComplete, stepMs = 1100 }: Props) {
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold">Analyzing footage</p>
+          <p className="text-sm font-semibold">{title}</p>
           <p className="text-xs text-muted-foreground">
-            First Touch AI · {pct}% complete
+            First Touch · {pct}% complete
           </p>
         </div>
       </div>

@@ -1,15 +1,35 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Bell, ChevronRight, TrendingUp } from 'lucide-react'
+import { usePlayer } from '@/lib/player-context'
+import { listClips, listCoachNotes } from '@/lib/store'
+import { computeOvr } from '@/lib/rating'
+import type { Clip, CoachNote } from '@/lib/types'
 
 export function PlayerHeader() {
+  const { profile } = usePlayer()
+  const [clips, setClips] = useState<Clip[]>([])
+  const [notes, setNotes] = useState<CoachNote[]>([])
+
+  useEffect(() => {
+    listClips().then(setClips)
+    listCoachNotes().then(setNotes)
+  }, [])
+
+  if (!profile) return null
+
+  const { ovr, activityLabel } = computeOvr(profile, clips, notes)
+
   return (
     <header className="px-5 pt-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative h-11 w-11 overflow-hidden rounded-full ring-2 ring-primary/30">
             <Image
-              src="/player-avatar.png"
-              alt="Diego Marín"
+              src={profile.avatarUrl}
+              alt={profile.name}
               fill
               className="object-cover"
               sizes="44px"
@@ -17,7 +37,7 @@ export function PlayerHeader() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Good afternoon,</p>
-            <p className="text-sm font-semibold leading-tight">Diego Marín</p>
+            <p className="text-sm font-semibold leading-tight">{profile.name}</p>
           </div>
         </div>
         <button
@@ -36,13 +56,13 @@ export function PlayerHeader() {
           {/* FIFA-style rating badge */}
           <div className="flex flex-col items-center justify-center gap-0.5 border-r border-white/10 px-6 py-6">
             <span className="text-5xl font-bold leading-none tracking-tight text-[color:var(--sand)]">
-              78
+              {ovr}
             </span>
             <span className="text-[11px] font-semibold tracking-[0.2em] text-white/60">
               OVR
             </span>
             <span className="mt-2 rounded-full bg-[color:var(--sage)] px-2.5 py-0.5 text-[10px] font-bold text-[color:var(--sage-foreground)]">
-              CAM
+              {profile.position}
             </span>
           </div>
 
@@ -52,14 +72,13 @@ export function PlayerHeader() {
                 Player Rating
               </p>
               <p className="text-sm text-white/80 text-pretty">
-                Auto-calculated from 24 AI uploads &amp; coach reviews.
+                Auto-calculated from {clips.length} upload{clips.length === 1 ? '' : 's'} &amp;{' '}
+                {notes.length} coach note{notes.length === 1 ? '' : 's'}.
               </p>
             </div>
             <div className="flex items-center gap-1.5 text-[color:var(--sand)]">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-semibold">
-                +3 OVR this month
-              </span>
+              <span className="text-xs font-semibold">{activityLabel}</span>
             </div>
           </div>
         </div>

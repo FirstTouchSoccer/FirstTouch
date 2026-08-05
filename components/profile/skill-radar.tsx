@@ -2,13 +2,21 @@
 
 import { useMemo } from 'react'
 import { Hexagon } from 'lucide-react'
-import { attributes } from '@/components/profile/profile-data'
+import { usePlayer } from '@/lib/player-context'
 
 const SIZE = 260
 const CENTER = SIZE / 2
 const RADIUS = 92
 const MAX = 99
 const RINGS = [0.25, 0.5, 0.75, 1]
+
+const ATTRIBUTE_META = [
+  { key: 'pace', label: 'Pace', short: 'PAC' },
+  { key: 'shooting', label: 'Shooting', short: 'SHO' },
+  { key: 'dribbling', label: 'Dribbling', short: 'DRI' },
+  { key: 'passing', label: 'Passing', short: 'PAS' },
+  { key: 'physicality', label: 'Physicality', short: 'PHY' },
+] as const
 
 function pointAt(index: number, count: number, radius: number) {
   const angle = -Math.PI / 2 + (index * 2 * Math.PI) / count
@@ -26,6 +34,15 @@ function polygon(count: number, radius: number) {
 }
 
 export function SkillRadar() {
+  const { profile } = usePlayer()
+
+  const attributes = useMemo(
+    () =>
+      profile
+        ? ATTRIBUTE_META.map((m) => ({ ...m, value: profile.attributes[m.key] }))
+        : [],
+    [profile],
+  )
   const count = attributes.length
 
   const dataPoints = useMemo(
@@ -36,8 +53,10 @@ export function SkillRadar() {
           return `${p.x},${p.y}`
         })
         .join(' '),
-    [count],
+    [attributes, count],
   )
+
+  if (!profile || count === 0) return null
 
   const average = Math.round(
     attributes.reduce((sum, a) => sum + a.value, 0) / count,

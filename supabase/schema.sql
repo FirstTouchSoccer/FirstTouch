@@ -1,0 +1,79 @@
+create table if not exists public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  name text not null default '',
+  avatar_url text not null default '/player-avatar.png',
+  position text not null default 'CAM',
+  age int,
+  location text not null default '',
+  pace int not null default 60,
+  shooting int not null default 60,
+  dribbling int not null default 60,
+  passing int not null default 60,
+  physicality int not null default 60,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.clips (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  title text not null,
+  skill_tag text not null default 'full-match',
+  video_path text not null default '',
+  is_sample boolean not null default false,
+  status text not null default 'uploaded', -- uploaded | sent_to_coach
+  created_at timestamptz not null default now()
+);
+
+-- Replaces the previously-hardcoded feedbackNotes array. coach_id references
+-- the static roster in lib/coaches.ts by id, never a free-text name — this is
+-- the structural fix for coach names drifting between screens.
+create table if not exists public.coach_notes (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  clip_id uuid not null references public.clips (id) on delete cascade,
+  coach_id text not null,
+  frame int not null default 0, -- 0-100 position on the clip timeline
+  type text not null default 'note', -- note | voice | video
+  text text not null,
+  media_path text,
+  duration_sec int,
+  is_sample boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.session_bookings (
+  id uuid primary key,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  coach_id text not null,
+  starts_at timestamptz not null,
+  duration_min int not null default 45,
+  focus text[] not null default '{}',
+  level text not null default 'Competitive club',
+  notes text,
+  status text not null default 'booked', -- booked | cancelled
+  created_at timestamptz not null default now(),
+  unique (user_id, coach_id, starts_at)
+);
+
+alter table public.profiles enable row level security;
+alter table public.clips enable row level security;
+alter table public.coach_notes enable row level security;
+alter table public.session_bookings enable row level security;
+
+create policy "own profile" on public.profiles
+  for all using (auth.uid() = id) with check (auth.uid() = id);
+
+create policy "own clips" on public.clips
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own coach notes" on public.coach_notes
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own bookings" on public.session_bookings
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "own videos read" on storage.objects
+  for select using (bucket_id = 'videos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "own videos write" on storage.objects
+  for insert with check (bucket_id = 'videos' and (storage.foldername(name))[1] = auth.uid()::text);

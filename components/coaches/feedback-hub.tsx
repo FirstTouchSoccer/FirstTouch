@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import {
   ArrowLeft,
@@ -11,7 +11,9 @@ import {
   Video as VideoIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { feedbackNotes, type FeedbackNote } from '@/components/coaches/coaches-data'
+import { getClip, listCoachNotes } from '@/lib/store'
+import { coachById } from '@/lib/coaches'
+import type { Clip, CoachNote } from '@/lib/types'
 
 const typeMeta = {
   note: { icon: MessageSquare, label: 'Frame note', color: 'text-primary' },
@@ -19,9 +21,45 @@ const typeMeta = {
   video: { icon: VideoIcon, label: 'Video response', color: 'text-rose' },
 } as const
 
-export function FeedbackHub({ onBack }: { onBack: () => void }) {
-  const [activeNote, setActiveNote] = useState<FeedbackNote>(feedbackNotes[1])
+export function FeedbackHub({
+  clipId,
+  onBack,
+}: {
+  clipId: string
+  onBack: () => void
+}) {
+  const [clip, setClip] = useState<Clip | null>(null)
+  const [notes, setNotes] = useState<CoachNote[]>([])
+  const [activeNote, setActiveNote] = useState<CoachNote | null>(null)
   const [playing, setPlaying] = useState(false)
+
+  useEffect(() => {
+    getClip(clipId).then(setClip)
+    listCoachNotes(clipId).then((n) => {
+      setNotes(n)
+      setActiveNote(n[0] ?? null)
+    })
+  }, [clipId])
+
+  if (!clip || !activeNote) {
+    return (
+      <div className="animate-in fade-in duration-500 px-5 pt-8">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back to coaches"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <p className="mt-6 text-sm text-muted-foreground">
+          No coach feedback on this clip yet.
+        </p>
+      </div>
+    )
+  }
+
+  const coachName = coachById(activeNote.coachId)?.name ?? 'Your coach'
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -37,21 +75,27 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
         <div>
           <h1 className="text-lg font-bold tracking-tight">Feedback Session</h1>
           <p className="text-xs text-muted-foreground">
-            Marcus Bell · First Touch review
+            {coachName} · {clip.title} review
           </p>
         </div>
       </header>
 
-      {/* Video with timeline markers */}
+      {/* Clip with timeline markers */}
       <div className="mt-5 px-5">
         <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-charcoal">
-          <Image
-            src="/clip-first-touch.png"
-            alt="Coach feedback clip"
-            fill
-            className="object-cover"
-            sizes="(max-width: 448px) 100vw, 448px"
-          />
+          {clip.thumbnailUrl ? (
+            <Image
+              src={clip.thumbnailUrl}
+              alt={clip.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 448px) 100vw, 448px"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <VideoIcon className="h-10 w-10" />
+            </div>
+          )}
           <div className="absolute inset-0 flex items-center justify-center bg-charcoal/30">
             <button
               type="button"
@@ -66,9 +110,6 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
               )}
             </button>
           </div>
-          <div className="absolute left-3 top-3 rounded-md bg-charcoal/80 px-2 py-1 font-mono text-[11px] text-[color:var(--secondary)]">
-            {activeNote.time}
-          </div>
         </div>
 
         {/* Interactive timeline with markers */}
@@ -78,7 +119,7 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
             className="absolute top-1/2 left-0 h-1.5 -translate-y-1/2 rounded-full bg-primary"
             style={{ width: `${activeNote.frame}%` }}
           />
-          {feedbackNotes.map((n) => {
+          {notes.map((n) => {
             const Icon = typeMeta[n.type].icon
             const isActive = n.id === activeNote.id
             return (
@@ -86,7 +127,7 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
                 key={n.id}
                 type="button"
                 onClick={() => setActiveNote(n)}
-                aria-label={`Feedback at ${n.time}`}
+                aria-label={`Feedback at frame ${n.frame}`}
                 className={cn(
                   'absolute top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 transition-all',
                   isActive
@@ -100,21 +141,17 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
             )
           })}
         </div>
-        <div className="flex justify-between font-mono text-[11px] text-muted-foreground">
-          <span>0:00</span>
-          <span>0:45</span>
-        </div>
       </div>
 
       {/* Notes feed */}
       <div className="mt-6 px-5">
         <h2 className="text-sm font-bold tracking-tight">Coach notes</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Tap a marker or note to jump to that frame
+          Tap a marker or note to jump to that point
         </p>
 
         <ul className="mt-3 flex flex-col gap-2.5">
-          {feedbackNotes.map((n) => {
+          {notes.map((n) => {
             const meta = typeMeta[n.type]
             const Icon = meta.icon
             const isActive = n.id === activeNote.id
@@ -140,15 +177,12 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-primary">
-                        {n.time}
-                      </span>
                       <span className="text-[11px] font-medium text-muted-foreground">
                         {meta.label}
                       </span>
-                      {n.duration && (
+                      {n.durationSec != null && (
                         <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                          {n.duration}
+                          0:{String(n.durationSec).padStart(2, '0')}
                         </span>
                       )}
                     </div>
@@ -173,9 +207,6 @@ export function FeedbackHub({ onBack }: { onBack: () => void }) {
                             />
                           ))}
                         </div>
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          {n.duration}
-                        </span>
                       </div>
                     )}
                   </div>
