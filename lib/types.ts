@@ -23,15 +23,30 @@ export interface Attributes {
   physicality: number
 }
 
-export interface PlayerProfile {
+export type ExperienceLevel = 'new' | 'developing' | 'club' | 'elite'
+
+export const EXPERIENCE_LEVELS: { value: ExperienceLevel; label: string }[] = [
+  { value: 'new', label: 'New to soccer (0-1 yrs)' },
+  { value: 'developing', label: 'Developing (rec / school ball)' },
+  { value: 'club', label: 'Club / competitive travel' },
+  { value: 'elite', label: 'Elite / academy / ODP' },
+]
+
+export function experienceLabel(level: ExperienceLevel): string {
+  return EXPERIENCE_LEVELS.find((l) => l.value === level)?.label ?? level
+}
+
+export interface Player {
   id: string
-  email: string
+  accountId: string
   name: string
   avatarUrl: string
   position: Position
   age: number | null
+  experience: ExperienceLevel
   location: string
   attributes: Attributes
+  consentedAt: string
   createdAt: string
 }
 

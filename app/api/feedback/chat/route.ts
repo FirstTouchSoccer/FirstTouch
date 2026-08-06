@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { buildMockChatReply, MAX_CHAT_TURNS } from '@/lib/mock-chat'
 import { movementReads } from '@/lib/read'
 import { isTrustedOrigin } from '@/lib/verify-origin'
-import type { ChatMessage, Feedback, PlayerProfile, PoseMetrics } from '@/lib/types'
+import { experienceLabel, type ChatMessage, type Feedback, type Player, type PoseMetrics } from '@/lib/types'
 
 export const maxDuration = 60
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
   const { profile, metrics, feedback, clipTitle, history, question } = (await req.json()) as {
-    profile: Pick<PlayerProfile, 'name' | 'age' | 'position' | 'attributes'>
+    profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
     metrics: PoseMetrics
     feedback: Feedback
     clipTitle: string
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       system: [
         SYSTEM_PROMPT,
         '',
-        `Player: ${profile.name}, age ${profile.age ?? 'unknown'}, position ${profile.position}.`,
+        `Player: ${profile.name}, age ${profile.age ?? 'unknown'}, position ${profile.position}, experience level: ${experienceLabel(profile.experience)}.`,
         `Clip: "${clipTitle}" (movement source: ${metrics.source === 'mediapipe' ? 'in-browser pose estimation' : 'simulated demo data'}).`,
         `Movement read: ${reads.map((r) => `${r.label}: ${r.band}`).join(', ')}.`,
         `Summary already given: ${feedback.summary}`,

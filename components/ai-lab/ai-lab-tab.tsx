@@ -22,7 +22,7 @@ import { AnalysisResult } from '@/components/ai-lab/analysis-result'
 import { createClip, updateClip } from '@/lib/store'
 import { analyzeVideo } from '@/lib/pose'
 import { buildMockFeedback } from '@/lib/mock-feedback'
-import { usePlayer } from '@/lib/player-context'
+import { usePlayers } from '@/lib/players-context'
 import type { Clip, Feedback, SkillTag } from '@/lib/types'
 
 type Mode = 'skill' | 'match'
@@ -87,7 +87,7 @@ const matchSteps = [
 ]
 
 export function AiLabTab() {
-  const { profile } = usePlayer()
+  const { activePlayer: profile } = usePlayers()
   const [mode, setMode] = useState<Mode>('skill')
   const [phase, setPhase] = useState<Phase>('idle')
   const [skill, setSkill] = useState(skills[0])
@@ -138,7 +138,7 @@ export function AiLabTab() {
     if (!file || !profile) return
     setPhase('processing')
     setActiveStep(0)
-    const clip = await createClip(title, file, skillTag)
+    const clip = await createClip(profile.id, title, file, skillTag)
 
     if (skillTag === 'full-match') {
       await updateClip(clip.id, { status: 'sent_to_coach' })
@@ -161,6 +161,7 @@ export function AiLabTab() {
           profile: {
             name: profile.name,
             age: profile.age,
+            experience: profile.experience,
             position: profile.position,
             attributes: profile.attributes,
           },

@@ -5,7 +5,8 @@ import { getVideo, putVideo } from '@/lib/idb'
 import type {
   Clip,
   CoachNote,
-  PlayerProfile,
+  ExperienceLevel,
+  Player,
   Session,
   SessionBooking,
   SkillTag,
@@ -16,16 +17,16 @@ import {
   seedDemoBookings,
   seedDemoClips,
   seedDemoCoachNotes,
-  seedDemoProfile,
+  seedDemoPlayer,
 } from '@/lib/demo-data'
 
 export const isDemoMode = !supabaseConfigured
 
 const SESSION_KEY = 'ft_session'
-const profileKey = (userId: string) => `ft_profile:${userId}`
-const clipsKey = (userId: string) => `ft_clips:${userId}`
-const notesKey = (userId: string) => `ft_notes:${userId}`
-const bookingsKey = (userId: string) => `ft_bookings:${userId}`
+const playersKey = (userId: string) => `ft_players:${userId}`
+const clipsKey = (userId: string, playerId: string) => `ft_clips:${userId}:${playerId}`
+const notesKey = (userId: string, playerId: string) => `ft_notes:${userId}:${playerId}`
+const bookingsKey = (userId: string, playerId: string) => `ft_bookings:${userId}:${playerId}`
 
 function readJson<T>(key: string): T | null {
   if (typeof window === 'undefined') return null
@@ -62,16 +63,25 @@ function mapAuthError(message: string): string {
   return message
 }
 
-function defaultProfile(userId: string, email: string, name: string): PlayerProfile {
+function buildPlayer(
+  id: string,
+  accountId: string,
+  name: string,
+  age: number | null,
+  experience: ExperienceLevel,
+  consentedAt: string
+): Player {
   return {
-    id: userId,
-    email,
+    id,
+    accountId,
     name,
     avatarUrl: '/player-avatar.png',
     position: 'CAM',
-    age: null,
+    age,
+    experience,
     location: '',
     attributes: { pace: 60, shooting: 60, dribbling: 60, passing: 60, physicality: 60 },
+    consentedAt,
     createdAt: new Date().toISOString(),
   }
 }
@@ -97,13 +107,35 @@ export type SignUpResult =
   | { status: 'signed_in'; session: Session }
   | { status: 'verification_required'; email: string }
 
-export async function signUp(email: string, password: string, name: string): Promise<SignUpResult> {
+/**
+ * `accountName` is the signing-up adult (parent/guardian, or the player
+ * themselves if 18+) — stored in Supabase auth user_metadata only, no UI
+ * surfaces it yet, kept for support/correspondence use later. `playerName`/
+ * `age`/`experience`/`consentedAt` describe the first child added at signup;
+ * consent is captured per-player (not once for the whole account), since a
+ * blanket consent at signup is weak evidence for a second child added later.
+ */
+export async function signUp(
+  email: string,
+  password: string,
+  accountName: string,
+  playerName: string,
+  age: number | null,
+  experience: ExperienceLevel,
+  consentedAt: string
+): Promise<SignUpResult> {
   if (supabase) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name },
+        data: {
+          account_name: accountName,
+          player_name: playerName,
+          player_age: age,
+          player_experience: experience,
+          consented_at: consentedAt,
+        },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
@@ -111,17 +143,19 @@ export async function signUp(email: string, password: string, name: string): Pro
     const user = data.user
     if (!user) throw new Error('Sign-up succeeded but no user returned.')
     if (!data.session) return { status: 'verification_required', email }
-    await supabase.from('profiles').upsert(profileToRow(defaultProfile(user.id, email, name)))
+    const player = buildPlayer(newId(), user.id, playerName, age, experience, consentedAt)
+    await supabase.from('players').insert(playerToRow(player))
     return { status: 'signed_in', session: { userId: user.id, email } }
   }
   // Demo mode: any email/password works, no real inbox, nothing to verify.
   const session: Session = { userId: `demo-${email.toLowerCase()}`, email }
   writeJson(SESSION_KEY, session)
-  if (!readJson<PlayerProfile>(profileKey(session.userId))) {
-    writeJson(profileKey(session.userId), defaultProfile(session.userId, email, name))
-    writeJson(clipsKey(session.userId), [])
-    writeJson(notesKey(session.userId), [])
-    writeJson(bookingsKey(session.userId), [])
+  if (!readJson<Player[]>(playersKey(session.userId))) {
+    const player = buildPlayer(newId(), session.userId, playerName, age, experience, consentedAt)
+    writeJson(playersKey(session.userId), [player])
+    writeJson(clipsKey(session.userId, player.id), [])
+    writeJson(notesKey(session.userId, player.id), [])
+    writeJson(bookingsKey(session.userId, player.id), [])
   }
   return { status: 'signed_in', session }
 }
@@ -137,12 +171,13 @@ export async function signIn(email: string, password: string): Promise<Session> 
     if (error) throw new Error(mapAuthError(error.message))
     return { userId: data.user.id, email }
   }
-  // Demo mode: signing in with an email that has no local profile yet
+  // Demo mode: signing in with an email that has no local players yet
   // silently registers it — any credentials always work.
   const session: Session = { userId: `demo-${email.toLowerCase()}`, email }
   writeJson(SESSION_KEY, session)
-  if (!readJson<PlayerProfile>(profileKey(session.userId))) {
-    await signUp(email, password, email.split('@')[0])
+  if (!readJson<Player[]>(playersKey(session.userId))) {
+    const guessName = email.split('@')[0]
+    await signUp(email, password, guessName, guessName, null, 'developing', new Date().toISOString())
   }
   return session
 }
@@ -157,18 +192,27 @@ export async function signInWithDemoAccount(): Promise<Session> {
     try {
       return await signIn(DEMO_EMAIL, DEMO_PASSWORD)
     } catch {
-      const result = await signUp(DEMO_EMAIL, DEMO_PASSWORD, 'Diego Marín')
+      const result = await signUp(
+        DEMO_EMAIL,
+        DEMO_PASSWORD,
+        'Demo Parent',
+        'Diego Marín',
+        17,
+        'club',
+        new Date().toISOString()
+      )
       if (result.status === 'signed_in') return result.session
       throw new Error('The demo account needs email verification on this Supabase project.')
     }
   }
   const session: Session = { userId: `demo-${DEMO_EMAIL.toLowerCase()}`, email: DEMO_EMAIL }
   writeJson(SESSION_KEY, session)
-  if (!readJson<PlayerProfile>(profileKey(session.userId))) {
-    writeJson(profileKey(session.userId), seedDemoProfile(session.userId))
-    writeJson(clipsKey(session.userId), seedDemoClips(session.userId))
-    writeJson(notesKey(session.userId), seedDemoCoachNotes(session.userId))
-    writeJson(bookingsKey(session.userId), seedDemoBookings(session.userId))
+  if (!readJson<Player[]>(playersKey(session.userId))) {
+    const player = seedDemoPlayer(session.userId)
+    writeJson(playersKey(session.userId), [player])
+    writeJson(clipsKey(session.userId, player.id), seedDemoClips(player.id))
+    writeJson(notesKey(session.userId, player.id), seedDemoCoachNotes(player.id))
+    writeJson(bookingsKey(session.userId, player.id), seedDemoBookings(player.id))
   }
   return session
 }
@@ -181,68 +225,112 @@ export async function signOut(): Promise<void> {
   if (typeof window !== 'undefined') localStorage.removeItem(SESSION_KEY)
 }
 
-// ---------- Profile ----------
+// ---------- Players ----------
 
-export async function getProfile(): Promise<PlayerProfile | null> {
+export async function listPlayers(): Promise<Player[]> {
   const session = await getSession()
-  if (!session) return null
+  if (!session) return []
   if (supabase) {
     const { data } = await supabase
-      .from('profiles')
+      .from('players')
       .select('*')
-      .eq('id', session.userId)
-      .single()
-    if (!data) {
-      const { data: userData } = await supabase.auth.getUser()
-      const name = (userData.user?.user_metadata as { name?: string } | undefined)?.name ?? ''
-      const fresh = defaultProfile(session.userId, session.email, name)
-      await supabase.from('profiles').upsert(profileToRow(fresh))
-      return fresh
+      .eq('account_id', session.userId)
+      .order('created_at', { ascending: true })
+    if (data && data.length > 0) return data.map(rowToPlayer)
+
+    // Signup created the auth user + metadata but the player row itself
+    // hadn't been written yet (e.g. email verification was pending) —
+    // recover it now, same deferred-creation pattern the old single-profile
+    // getProfile() used.
+    const { data: userData } = await supabase.auth.getUser()
+    const meta = userData.user?.user_metadata as
+      | { player_name?: string; player_age?: number | null; player_experience?: ExperienceLevel; consented_at?: string }
+      | undefined
+    if (meta?.player_name && meta?.consented_at) {
+      const player = await createPlayer({
+        name: meta.player_name,
+        age: meta.player_age ?? null,
+        experience: meta.player_experience ?? 'developing',
+        consentedAt: meta.consented_at,
+      })
+      return [player]
     }
-    return rowToProfile(data, session.email)
+    return []
   }
-  return readJson<PlayerProfile>(profileKey(session.userId))
+  return readJson<Player[]>(playersKey(session.userId)) ?? []
 }
 
-export async function saveProfile(patch: Partial<PlayerProfile>): Promise<PlayerProfile> {
+export async function getPlayer(id: string): Promise<Player | null> {
+  const players = await listPlayers()
+  return players.find((p) => p.id === id) ?? null
+}
+
+export async function createPlayer(input: {
+  name: string
+  age: number | null
+  experience: ExperienceLevel
+  consentedAt: string
+}): Promise<Player> {
   const session = await requireSession()
-  const current = await getProfile()
-  const merged: PlayerProfile = { ...(current ?? defaultProfile(session.userId, session.email, '')), ...patch }
+  const player = buildPlayer(newId(), session.userId, input.name, input.age, input.experience, input.consentedAt)
   if (supabase) {
-    await supabase.from('profiles').upsert(profileToRow(merged))
-    const refreshed = await getProfile()
-    if (!refreshed) throw new Error('Profile save failed.')
-    return refreshed
+    await supabase.from('players').insert(playerToRow(player))
+    return player
   }
-  writeJson(profileKey(session.userId), merged)
+  const players = readJson<Player[]>(playersKey(session.userId)) ?? []
+  writeJson(playersKey(session.userId), [...players, player])
+  writeJson(clipsKey(session.userId, player.id), [])
+  writeJson(notesKey(session.userId, player.id), [])
+  writeJson(bookingsKey(session.userId, player.id), [])
+  return player
+}
+
+export async function updatePlayer(
+  id: string,
+  patch: Partial<Pick<Player, 'name' | 'avatarUrl' | 'position' | 'age' | 'experience' | 'location' | 'attributes'>>
+): Promise<Player> {
+  const session = await requireSession()
+  const current = await getPlayer(id)
+  if (!current) throw new Error('Player not found.')
+  const merged: Player = { ...current, ...patch }
+  if (supabase) {
+    await supabase.from('players').update(playerToRow(merged)).eq('id', id)
+    return merged
+  }
+  const players = readJson<Player[]>(playersKey(session.userId)) ?? []
+  writeJson(playersKey(session.userId), players.map((p) => (p.id === id ? merged : p)))
   return merged
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-function profileToRow(p: PlayerProfile) {
+function playerToRow(p: Player) {
   return {
     id: p.id,
+    account_id: p.accountId,
     name: p.name,
     avatar_url: p.avatarUrl,
     position: p.position,
     age: p.age,
+    experience: p.experience,
     location: p.location,
     pace: p.attributes.pace,
     shooting: p.attributes.shooting,
     dribbling: p.attributes.dribbling,
     passing: p.attributes.passing,
     physicality: p.attributes.physicality,
+    consented_at: p.consentedAt,
   }
 }
 
-function rowToProfile(row: any, email: string): PlayerProfile {
+function rowToPlayer(row: any): Player {
   return {
     id: row.id,
-    email,
+    accountId: row.account_id,
     name: row.name,
     avatarUrl: row.avatar_url,
     position: row.position,
     age: row.age,
+    experience: row.experience ?? 'developing',
     location: row.location,
     attributes: {
       pace: row.pace,
@@ -251,37 +339,48 @@ function rowToProfile(row: any, email: string): PlayerProfile {
       passing: row.passing,
       physicality: row.physicality,
     },
+    consentedAt: row.consented_at,
     createdAt: row.created_at,
   }
 }
 
 // ---------- Clips ----------
 
-export async function listClips(): Promise<Clip[]> {
+export async function listClips(playerId: string): Promise<Clip[]> {
   const session = await getSession()
   if (!session) return []
   if (supabase) {
     const { data } = await supabase
       .from('clips')
       .select('*')
-      .eq('user_id', session.userId)
+      .eq('player_id', playerId)
       .order('created_at', { ascending: false })
     return (data ?? []).map(rowToClip)
   }
-  const clips = readJson<Clip[]>(clipsKey(session.userId)) ?? []
+  const clips = readJson<Clip[]>(clipsKey(session.userId, playerId)) ?? []
   return [...clips].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 }
 
 export async function getClip(id: string): Promise<Clip | null> {
-  const clips = await listClips()
-  return clips.find((c) => c.id === id) ?? null
+  if (supabase) {
+    const { data } = await supabase.from('clips').select('*').eq('id', id).maybeSingle()
+    return data ? rowToClip(data) : null
+  }
+  const session = await getSession()
+  if (!session) return null
+  const players = readJson<Player[]>(playersKey(session.userId)) ?? []
+  for (const p of players) {
+    const found = (readJson<Clip[]>(clipsKey(session.userId, p.id)) ?? []).find((c) => c.id === id)
+    if (found) return found
+  }
+  return null
 }
 
-export async function createClip(title: string, file: File, skillTag: SkillTag): Promise<Clip> {
+export async function createClip(playerId: string, title: string, file: File, skillTag: SkillTag): Promise<Clip> {
   const session = await requireSession()
   const id = newId()
   if (supabase) {
-    const path = `${session.userId}/${id}-${file.name}`
+    const path = `${session.userId}/${playerId}/${id}-${file.name}`
     const token = await authToken()
     const { url: uploadUrl } = await fetch('/api/storage/upload-url', {
       method: 'POST',
@@ -295,7 +394,7 @@ export async function createClip(title: string, file: File, skillTag: SkillTag):
     })
     await supabase.from('clips').insert({
       id,
-      user_id: session.userId,
+      player_id: playerId,
       title,
       skill_tag: skillTag,
       video_path: path,
@@ -322,8 +421,8 @@ export async function createClip(title: string, file: File, skillTag: SkillTag):
     status: 'uploaded',
     createdAt: new Date().toISOString(),
   }
-  const clips = readJson<Clip[]>(clipsKey(session.userId)) ?? []
-  writeJson(clipsKey(session.userId), [clip, ...clips])
+  const clips = readJson<Clip[]>(clipsKey(session.userId, playerId)) ?? []
+  writeJson(clipsKey(session.userId, playerId), [clip, ...clips])
   return clip
 }
 
@@ -338,11 +437,18 @@ export async function updateClip(
     if (patch.metrics !== undefined) row.metrics = patch.metrics
     if (patch.feedback !== undefined) row.feedback = patch.feedback
     if (patch.chat !== undefined) row.chat = patch.chat
-    await supabase.from('clips').update(row).eq('id', id).eq('user_id', session.userId)
+    await supabase.from('clips').update(row).eq('id', id)
     return
   }
-  const clips = readJson<Clip[]>(clipsKey(session.userId)) ?? []
-  writeJson(clipsKey(session.userId), clips.map((c) => (c.id === id ? { ...c, ...patch } : c)))
+  const players = readJson<Player[]>(playersKey(session.userId)) ?? []
+  for (const p of players) {
+    const key = clipsKey(session.userId, p.id)
+    const clips = readJson<Clip[]>(key) ?? []
+    if (clips.some((c) => c.id === id)) {
+      writeJson(key, clips.map((c) => (c.id === id ? { ...c, ...patch } : c)))
+      return
+    }
+  }
 }
 
 export async function resolveVideoUrl(clip: Clip): Promise<string | null> {
@@ -377,31 +483,32 @@ function rowToClip(row: any): Clip {
 
 // ---------- Coach notes ----------
 
-export async function listCoachNotes(clipId?: string): Promise<CoachNote[]> {
+export async function listCoachNotes(playerId: string, clipId?: string): Promise<CoachNote[]> {
   const session = await getSession()
   if (!session) return []
   if (supabase) {
-    let query = supabase.from('coach_notes').select('*').eq('user_id', session.userId)
+    let query = supabase.from('coach_notes').select('*').eq('player_id', playerId)
     if (clipId) query = query.eq('clip_id', clipId)
     const { data } = await query.order('frame', { ascending: true })
     return (data ?? []).map(rowToNote)
   }
-  const notes = readJson<CoachNote[]>(notesKey(session.userId)) ?? []
+  const notes = readJson<CoachNote[]>(notesKey(session.userId, playerId)) ?? []
   const filtered = clipId ? notes.filter((n) => n.clipId === clipId) : notes
   return [...filtered].sort((a, b) => a.frame - b.frame)
 }
 
 export async function createCoachNote(
+  playerId: string,
   note: Omit<CoachNote, 'id' | 'isSample' | 'createdAt'>
 ): Promise<CoachNote> {
   const session = await requireSession()
   const full: CoachNote = { ...note, id: newId(), isSample: false, createdAt: new Date().toISOString() }
   if (supabase) {
-    await supabase.from('coach_notes').insert(noteToRow(full, session.userId))
+    await supabase.from('coach_notes').insert(noteToRow(full, playerId))
     return full
   }
-  const notes = readJson<CoachNote[]>(notesKey(session.userId)) ?? []
-  writeJson(notesKey(session.userId), [full, ...notes])
+  const notes = readJson<CoachNote[]>(notesKey(session.userId, playerId)) ?? []
+  writeJson(notesKey(session.userId, playerId), [full, ...notes])
   return full
 }
 
@@ -419,10 +526,10 @@ function rowToNote(row: any): CoachNote {
   }
 }
 
-function noteToRow(n: CoachNote, userId: string) {
+function noteToRow(n: CoachNote, playerId: string) {
   return {
     id: n.id,
-    user_id: userId,
+    player_id: playerId,
     clip_id: n.clipId,
     coach_id: n.coachId,
     frame: n.frame,
@@ -435,46 +542,51 @@ function noteToRow(n: CoachNote, userId: string) {
 
 // ---------- Bookings ----------
 
-export async function listBookings(): Promise<SessionBooking[]> {
+export async function listBookings(playerId: string): Promise<SessionBooking[]> {
   const session = await getSession()
   if (!session) return []
   if (supabase) {
     const { data } = await supabase
       .from('session_bookings')
       .select('*')
-      .eq('user_id', session.userId)
+      .eq('player_id', playerId)
       .order('starts_at', { ascending: true })
     return (data ?? []).map(rowToBooking)
   }
-  const bookings = readJson<SessionBooking[]>(bookingsKey(session.userId)) ?? []
+  const bookings = readJson<SessionBooking[]>(bookingsKey(session.userId, playerId)) ?? []
   return [...bookings].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
 }
 
 export async function createBooking(
+  playerId: string,
   booking: Omit<SessionBooking, 'id' | 'status' | 'createdAt'>
 ): Promise<SessionBooking> {
   const session = await requireSession()
   const full: SessionBooking = { ...booking, id: newId(), status: 'booked', createdAt: new Date().toISOString() }
   if (supabase) {
-    await supabase.from('session_bookings').insert(bookingToRow(full, session.userId))
+    await supabase.from('session_bookings').insert(bookingToRow(full, playerId))
     return full
   }
-  const bookings = readJson<SessionBooking[]>(bookingsKey(session.userId)) ?? []
-  writeJson(bookingsKey(session.userId), [full, ...bookings])
+  const bookings = readJson<SessionBooking[]>(bookingsKey(session.userId, playerId)) ?? []
+  writeJson(bookingsKey(session.userId, playerId), [full, ...bookings])
   return full
 }
 
 export async function cancelBooking(id: string): Promise<void> {
   const session = await requireSession()
   if (supabase) {
-    await supabase.from('session_bookings').update({ status: 'cancelled' }).eq('id', id).eq('user_id', session.userId)
+    await supabase.from('session_bookings').update({ status: 'cancelled' }).eq('id', id)
     return
   }
-  const bookings = readJson<SessionBooking[]>(bookingsKey(session.userId)) ?? []
-  writeJson(
-    bookingsKey(session.userId),
-    bookings.map((b) => (b.id === id ? { ...b, status: 'cancelled' as const } : b))
-  )
+  const players = readJson<Player[]>(playersKey(session.userId)) ?? []
+  for (const p of players) {
+    const key = bookingsKey(session.userId, p.id)
+    const bookings = readJson<SessionBooking[]>(key) ?? []
+    if (bookings.some((b) => b.id === id)) {
+      writeJson(key, bookings.map((b) => (b.id === id ? { ...b, status: 'cancelled' as const } : b)))
+      return
+    }
+  }
 }
 
 function rowToBooking(row: any): SessionBooking {
@@ -491,10 +603,10 @@ function rowToBooking(row: any): SessionBooking {
   }
 }
 
-function bookingToRow(b: SessionBooking, userId: string) {
+function bookingToRow(b: SessionBooking, playerId: string) {
   return {
     id: b.id,
-    user_id: userId,
+    player_id: playerId,
     coach_id: b.coachId,
     starts_at: b.startsAt,
     duration_min: b.durationMin,

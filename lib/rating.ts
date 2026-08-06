@@ -1,4 +1,4 @@
-import type { Attributes, Clip, CoachNote, PlayerProfile } from '@/lib/types'
+import type { Attributes, Clip, CoachNote, Player } from '@/lib/types'
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -17,7 +17,7 @@ function isRecent(iso: string, from: Date): boolean {
  * verified activity (real, non-sample clips and delivered coach notes).
  */
 export function computeOvr(
-  profile: PlayerProfile,
+  profile: Player,
   clips: Clip[],
   notes: CoachNote[],
   now: Date = new Date()

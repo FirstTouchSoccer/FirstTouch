@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 import { Hexagon } from 'lucide-react'
-import { usePlayer } from '@/lib/player-context'
+import { usePlayers } from '@/lib/players-context'
 
 const SIZE = 260
 const CENTER = SIZE / 2
@@ -34,7 +34,7 @@ function polygon(count: number, radius: number) {
 }
 
 export function SkillRadar() {
-  const { profile } = usePlayer()
+  const { activePlayer: profile } = usePlayers()
 
   const attributes = useMemo(
     () =>

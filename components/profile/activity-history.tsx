@@ -5,6 +5,7 @@ import { ChevronRight, MessageSquareText, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { listBookings, listCoachNotes } from '@/lib/store'
 import { coachById } from '@/lib/coaches'
+import { usePlayers } from '@/lib/players-context'
 import type { CoachNote, SessionBooking } from '@/lib/types'
 
 type HistoryItem =
@@ -12,17 +13,19 @@ type HistoryItem =
   | { kind: 'note'; id: string; at: string; coachName: string; text: string }
 
 export function ActivityHistory() {
+  const { activePlayer } = usePlayers()
   const [bookings, setBookings] = useState<SessionBooking[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([listBookings(), listCoachNotes()]).then(([b, n]) => {
+    if (!activePlayer) return
+    Promise.all([listBookings(activePlayer.id), listCoachNotes(activePlayer.id)]).then(([b, n]) => {
       setBookings(b)
       setNotes(n)
       setLoaded(true)
     })
-  }, [])
+  }, [activePlayer?.id])
 
   const items: HistoryItem[] = [
     ...bookings.map(

@@ -4,20 +4,21 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Bell, ChevronRight, TrendingUp } from 'lucide-react'
 import { LogoMark } from '@/components/logo'
-import { usePlayer } from '@/lib/player-context'
+import { usePlayers } from '@/lib/players-context'
 import { listClips, listCoachNotes } from '@/lib/store'
 import { computeOvr } from '@/lib/rating'
 import type { Clip, CoachNote } from '@/lib/types'
 
 export function PlayerHeader() {
-  const { profile } = usePlayer()
+  const { activePlayer: profile } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
 
   useEffect(() => {
-    listClips().then(setClips)
-    listCoachNotes().then(setNotes)
-  }, [])
+    if (!profile) return
+    listClips(profile.id).then(setClips)
+    listCoachNotes(profile.id).then(setNotes)
+  }, [profile?.id])
 
   if (!profile) return null
 

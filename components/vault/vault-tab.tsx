@@ -13,17 +13,20 @@ import {
 } from '@/components/vault/vault-data'
 import { VideoPlayer, type PlayerTarget } from '@/components/vault/video-player'
 import { listClips, resolveVideoUrl } from '@/lib/store'
+import { usePlayers } from '@/lib/players-context'
 import type { Clip } from '@/lib/types'
 
 export function VaultTab() {
+  const { activePlayer } = usePlayers()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState<Category | 'All'>('All')
   const [selected, setSelected] = useState<PlayerTarget | null>(null)
   const [myClips, setMyClips] = useState<Clip[]>([])
 
   useEffect(() => {
-    listClips().then(setMyClips)
-  }, [])
+    if (!activePlayer) return
+    listClips(activePlayer.id).then(setMyClips)
+  }, [activePlayer?.id])
 
   const filtered = useMemo(() => {
     return videos.filter((v) => {

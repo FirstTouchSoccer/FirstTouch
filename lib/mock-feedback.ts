@@ -4,10 +4,10 @@
  * derived from the actual pose metrics so it still feels personalized, and is
  * clearly labelled `source: "mock"` in the UI.
  */
-import type { Feedback, PlayerProfile, PoseMetrics, Scores } from '@/lib/types'
+import type { Feedback, Player, PoseMetrics, Scores } from '@/lib/types'
 
 export function buildMockFeedback(
-  profile: Pick<PlayerProfile, 'name' | 'position'>,
+  profile: Pick<Player, 'name' | 'position'>,
   metrics: PoseMetrics
 ): Feedback {
   const scores: Scores = {

@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown, Dumbbell, RotateCcw, Info } from 'lucide-reac
 import { cn } from '@/lib/utils'
 import { movementReads, type Band } from '@/lib/read'
 import { AnalysisChat } from '@/components/ai-lab/analysis-chat'
-import type { Clip, PlayerProfile } from '@/lib/types'
+import type { Clip, Player } from '@/lib/types'
 
 const bandStyle: Record<Band, string> = {
   Developing: 'bg-secondary text-muted-foreground',
@@ -19,7 +19,7 @@ export function AnalysisResult({
   onClipUpdate,
 }: {
   clip: Clip
-  profile: PlayerProfile
+  profile: Player
   onReset: () => void
   onClipUpdate: (clip: Clip) => void
 }) {

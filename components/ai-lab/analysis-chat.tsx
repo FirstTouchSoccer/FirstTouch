@@ -5,7 +5,7 @@ import { MessageCircle, Send, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { updateClip } from '@/lib/store'
 import { buildMockChatReply, MAX_CHAT_TURNS } from '@/lib/mock-chat'
-import type { ChatMessage, Clip, PlayerProfile } from '@/lib/types'
+import type { ChatMessage, Clip, Player } from '@/lib/types'
 
 export function AnalysisChat({
   clip,
@@ -13,7 +13,7 @@ export function AnalysisChat({
   onClipUpdate,
 }: {
   clip: Clip
-  profile: PlayerProfile
+  profile: Player
   onClipUpdate: (clip: Clip) => void
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(clip.chat ?? [])
@@ -44,6 +44,7 @@ export function AnalysisChat({
           profile: {
             name: profile.name,
             age: profile.age,
+            experience: profile.experience,
             position: profile.position,
             attributes: profile.attributes,
           },

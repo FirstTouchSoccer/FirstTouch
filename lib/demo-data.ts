@@ -1,4 +1,4 @@
-import type { Clip, CoachNote, PlayerProfile, SessionBooking } from '@/lib/types'
+import type { Clip, CoachNote, Player, SessionBooking } from '@/lib/types'
 
 /**
  * The fixed account behind "Continue with demo account" on the login screen.
@@ -7,15 +7,17 @@ import type { Clip, CoachNote, PlayerProfile, SessionBooking } from '@/lib/types
  */
 export const DEMO_EMAIL = 'demo@firsttouch.app'
 export const DEMO_PASSWORD = 'firsttouch-demo'
+export const DEMO_PLAYER_ID = 'demo-player-diego'
 
-export function seedDemoProfile(userId: string): PlayerProfile {
+export function seedDemoPlayer(accountId: string): Player {
   return {
-    id: userId,
-    email: DEMO_EMAIL,
+    id: DEMO_PLAYER_ID,
+    accountId,
     name: 'Diego Marín',
     avatarUrl: '/player-avatar.png',
     position: 'CAM',
     age: 17,
+    experience: 'club',
     location: 'Valencia, ES',
     attributes: {
       pace: 82,
@@ -24,12 +26,13 @@ export function seedDemoProfile(userId: string): PlayerProfile {
       passing: 79,
       physicality: 68,
     },
+    consentedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
     createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
   }
 }
 
-export function seedDemoClips(userId: string): Clip[] {
-  void userId
+export function seedDemoClips(playerId: string): Clip[] {
+  void playerId
   const now = Date.now()
   const days = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString()
   return [
@@ -56,8 +59,8 @@ export function seedDemoClips(userId: string): Clip[] {
   ]
 }
 
-export function seedDemoCoachNotes(userId: string): CoachNote[] {
-  void userId
+export function seedDemoCoachNotes(playerId: string): CoachNote[] {
+  void playerId
   const now = Date.now()
   const days = (n: number) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString()
   return [
@@ -108,8 +111,8 @@ export function seedDemoCoachNotes(userId: string): CoachNote[] {
   ]
 }
 
-export function seedDemoBookings(userId: string): SessionBooking[] {
-  void userId
+export function seedDemoBookings(playerId: string): SessionBooking[] {
+  void playerId
   const next = new Date()
   next.setDate(next.getDate() + ((2 - next.getDay() + 7) % 7 || 7))
   next.setHours(17, 30, 0, 0)

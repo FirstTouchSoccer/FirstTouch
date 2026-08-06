@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { Coach } from '@/lib/coaches'
 import { createBooking } from '@/lib/store'
+import { usePlayers } from '@/lib/players-context'
 import type { SessionBooking } from '@/lib/types'
 
 type Step = 'calendar' | 'questionnaire' | 'confirmed'
@@ -71,6 +72,7 @@ export function BookingFlow({
   coach: Coach
   onBack: () => void
 }) {
+  const { activePlayer } = usePlayers()
   const [days] = useState(() => buildDays())
   const [step, setStep] = useState<Step>('calendar')
   const [day, setDay] = useState(days[2])
@@ -87,12 +89,12 @@ export function BookingFlow({
     )
 
   async function confirmBooking() {
-    if (!slot) return
+    if (!slot || !activePlayer) return
     setSaving(true)
     const [hours, minutes] = slot.split(':').map(Number)
     const startsAt = new Date(day)
     startsAt.setHours(hours, minutes, 0, 0)
-    const created = await createBooking({
+    const created = await createBooking(activePlayer.id, {
       coachId: coach.id,
       startsAt: startsAt.toISOString(),
       durationMin: 45,

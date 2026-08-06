@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { UploadCloud, MessageSquareText, CalendarCheck, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { listBookings, listClips, listCoachNotes } from '@/lib/store'
+import { usePlayers } from '@/lib/players-context'
 
 type Goal = {
   title: string
@@ -14,15 +15,17 @@ type Goal = {
 }
 
 export function GoalBenchmarks() {
+  const { activePlayer } = usePlayers()
   const [clipCount, setClipCount] = useState(0)
   const [noteCount, setNoteCount] = useState(0)
   const [bookingCount, setBookingCount] = useState(0)
 
   useEffect(() => {
-    listClips().then((c) => setClipCount(c.length))
-    listCoachNotes().then((n) => setNoteCount(n.length))
-    listBookings().then((b) => setBookingCount(b.filter((x) => x.status === 'booked').length))
-  }, [])
+    if (!activePlayer) return
+    listClips(activePlayer.id).then((c) => setClipCount(c.length))
+    listCoachNotes(activePlayer.id).then((n) => setNoteCount(n.length))
+    listBookings(activePlayer.id).then((b) => setBookingCount(b.filter((x) => x.status === 'booked').length))
+  }, [activePlayer?.id])
 
   const goals: Goal[] = [
     {

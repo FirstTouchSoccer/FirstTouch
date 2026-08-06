@@ -5,6 +5,7 @@ import { Film, MessageSquareText, CalendarClock, Flame, ArrowUpRight } from 'luc
 import { cn } from '@/lib/utils'
 import { listBookings, listClips, listCoachNotes } from '@/lib/store'
 import { computeStreak } from '@/lib/rating'
+import { usePlayers } from '@/lib/players-context'
 import type { Clip, CoachNote, SessionBooking } from '@/lib/types'
 
 function isThisMonth(iso: string, now: Date): boolean {
@@ -13,15 +14,17 @@ function isThisMonth(iso: string, now: Date): boolean {
 }
 
 export function MetricCards() {
+  const { activePlayer } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [bookings, setBookings] = useState<SessionBooking[]>([])
 
   useEffect(() => {
-    listClips().then(setClips)
-    listCoachNotes().then(setNotes)
-    listBookings().then(setBookings)
-  }, [])
+    if (!activePlayer) return
+    listClips(activePlayer.id).then(setClips)
+    listCoachNotes(activePlayer.id).then(setNotes)
+    listBookings(activePlayer.id).then(setBookings)
+  }, [activePlayer?.id])
 
   const now = new Date()
   const clipsThisMonth = clips.filter((c) => isThisMonth(c.createdAt, now)).length

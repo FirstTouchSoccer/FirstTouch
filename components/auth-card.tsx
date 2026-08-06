@@ -10,10 +10,15 @@ import {
   signInWithDemoAccount,
   signUp,
 } from '@/lib/store'
+import { emptyPlayerFields, PlayerFieldsForm, type PlayerFieldsValues } from '@/components/player-fields-form'
+import { ConsentCheckbox } from '@/components/consent-checkbox'
 
 export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   const router = useRouter()
-  const [name, setName] = useState('')
+  const [accountFirstName, setAccountFirstName] = useState('')
+  const [accountLastName, setAccountLastName] = useState('')
+  const [player, setPlayer] = useState<PlayerFieldsValues>(emptyPlayerFields)
+  const [consented, setConsented] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +32,18 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
     setError(null)
     try {
       if (mode === 'signup') {
-        const result = await signUp(email, password, name)
+        if (!consented) return
+        const accountName = `${accountFirstName.trim()} ${accountLastName.trim()}`.trim()
+        const playerName = `${player.firstName.trim()} ${player.lastName.trim()}`.trim()
+        const result = await signUp(
+          email,
+          password,
+          accountName,
+          playerName,
+          player.age ? Number(player.age) : null,
+          player.experience,
+          new Date().toISOString()
+        )
         if (result.status === 'verification_required') {
           setPendingEmail(result.email)
           return
@@ -91,7 +107,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
       </h1>
       <p className="mt-1.5 text-xs text-muted-foreground">
         {mode === 'signup'
-          ? 'Start uploading clips and getting AI coaching feedback.'
+          ? "Parents/guardians create the account and can add their kids' player profiles."
           : 'Log in to see your progress and coach feedback.'}
       </p>
 
@@ -103,14 +119,32 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
 
       <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
         {mode === 'signup' && (
-          <input
-            required
-            type="text"
-            placeholder="Full name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
-          />
+          <>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Your info</p>
+            <div className="flex gap-3">
+              <input
+                required
+                type="text"
+                placeholder="Your first name"
+                value={accountFirstName}
+                onChange={(e) => setAccountFirstName(e.target.value)}
+                className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
+              />
+              <input
+                required
+                type="text"
+                placeholder="Your last name"
+                value={accountLastName}
+                onChange={(e) => setAccountLastName(e.target.value)}
+                className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
+              />
+            </div>
+
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Add your player
+            </p>
+            <PlayerFieldsForm values={player} onChange={setPlayer} />
+          </>
         )}
         <input
           required
@@ -129,11 +163,13 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           className="rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
         />
 
+        {mode === 'signup' && <ConsentCheckbox checked={consented} onChange={setConsented} />}
+
         {error && <p className="text-xs font-medium text-destructive">{error}</p>}
 
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || (mode === 'signup' && !consented)}
           className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-60"
         >
           {mode === 'signup' ? 'Create account' : 'Log in'}
@@ -167,6 +203,16 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
             </Link>
           </>
         )}
+      </p>
+
+      <p className="mt-4 text-center text-[11px] text-muted-foreground">
+        <Link href="/terms" className="underline underline-offset-2">
+          Terms of Service
+        </Link>{' '}
+        ·{' '}
+        <Link href="/privacy" className="underline underline-offset-2">
+          Privacy Policy
+        </Link>
       </p>
     </div>
   )

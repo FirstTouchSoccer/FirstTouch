@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Film, MessageSquareText, ChevronRight } from 'lucide-react'
 import { listClips, listCoachNotes } from '@/lib/store'
 import { coachById } from '@/lib/coaches'
+import { usePlayers } from '@/lib/players-context'
 import type { Clip, CoachNote } from '@/lib/types'
 
 function timeAgo(iso: string): string {
@@ -21,17 +22,19 @@ type FeedItem =
   | { kind: 'note'; at: string; note: CoachNote }
 
 export function ActivityFeed() {
+  const { activePlayer } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    Promise.all([listClips(), listCoachNotes()]).then(([c, n]) => {
+    if (!activePlayer) return
+    Promise.all([listClips(activePlayer.id), listCoachNotes(activePlayer.id)]).then(([c, n]) => {
       setClips(c)
       setNotes(n)
       setLoaded(true)
     })
-  }, [])
+  }, [activePlayer?.id])
 
   const items: FeedItem[] = [
     ...clips.map((clip): FeedItem => ({ kind: 'clip', at: clip.createdAt, clip })),

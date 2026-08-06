@@ -5,23 +5,24 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { BadgeCheck, MapPin, LogOut, Film, MessageSquareText, Trophy, Flame } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { usePlayer } from '@/lib/player-context'
+import { usePlayers } from '@/lib/players-context'
 import { listBookings, listClips, listCoachNotes, signOut } from '@/lib/store'
 import { computeOvr, computeStreak } from '@/lib/rating'
 import type { Clip, CoachNote, SessionBooking } from '@/lib/types'
 
 export function ProfileHeader() {
   const router = useRouter()
-  const { profile } = usePlayer()
+  const { activePlayer: profile } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [bookings, setBookings] = useState<SessionBooking[]>([])
 
   useEffect(() => {
-    listClips().then(setClips)
-    listCoachNotes().then(setNotes)
-    listBookings().then(setBookings)
-  }, [])
+    if (!profile) return
+    listClips(profile.id).then(setClips)
+    listCoachNotes(profile.id).then(setNotes)
+    listBookings(profile.id).then(setBookings)
+  }, [profile?.id])
 
   if (!profile) return null
 

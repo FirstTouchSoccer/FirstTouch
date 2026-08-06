@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { listClips, listCoachNotes } from '@/lib/store'
+import { usePlayers } from '@/lib/players-context'
 import type { Clip, CoachNote } from '@/lib/types'
 
 const ranges = ['7D', '30D', '90D'] as const
@@ -61,14 +62,16 @@ function bucketCumulative(dates: string[], days: number): number[] {
 }
 
 export function ProgressionChart() {
+  const { activePlayer } = usePlayers()
   const [range, setRange] = useState<Range>('30D')
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
 
   useEffect(() => {
-    listClips().then(setClips)
-    listCoachNotes().then(setNotes)
-  }, [])
+    if (!activePlayer) return
+    listClips(activePlayer.id).then(setClips)
+    listCoachNotes(activePlayer.id).then(setNotes)
+  }, [activePlayer?.id])
 
   const days = rangeDays[range]
   const values = useMemo(() => {

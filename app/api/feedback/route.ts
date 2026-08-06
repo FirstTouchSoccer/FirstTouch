@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { movementReads } from '@/lib/read'
 import { isTrustedOrigin } from '@/lib/verify-origin'
-import type { PlayerProfile, PoseMetrics } from '@/lib/types'
+import { experienceLabel, type Player, type PoseMetrics } from '@/lib/types'
 
 export const maxDuration = 120
 
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
   const { profile, metrics, clipTitle } = (await req.json()) as {
-    profile: Pick<PlayerProfile, 'name' | 'age' | 'position' | 'attributes'>
+    profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
     metrics: PoseMetrics
     clipTitle: string
   }
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
           role: 'user',
           content: [
             `Clip: "${clipTitle}"`,
-            `Player: ${profile.name}, age ${profile.age ?? 'unknown'}, position ${profile.position}.`,
+            `Player: ${profile.name}, age ${profile.age ?? 'unknown'}, position ${profile.position}, experience level: ${experienceLabel(profile.experience)}.`,
             `Self-rated attributes (0-99, for context only, not measurements): pace ${profile.attributes.pace}, shooting ${profile.attributes.shooting}, dribbling ${profile.attributes.dribbling}, passing ${profile.attributes.passing}, physicality ${profile.attributes.physicality}.`,
             '',
             `General movement read (approximate, single-camera estimate over ~${metrics.durationSec}s; source: ${metrics.source === 'mediapipe' ? 'in-browser pose estimation' : 'simulated demo data'}):`,

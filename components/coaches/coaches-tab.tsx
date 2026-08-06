@@ -6,6 +6,7 @@ import { Star, BadgeCheck, MessageSquareText, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { coaches, coachById, specializationFilters, type Coach } from '@/lib/coaches'
 import { listCoachNotes } from '@/lib/store'
+import { usePlayers } from '@/lib/players-context'
 import type { CoachNote } from '@/lib/types'
 import { FeedbackHub } from '@/components/coaches/feedback-hub'
 import { BookingFlow } from '@/components/coaches/booking-flow'
@@ -16,14 +17,16 @@ type View =
   | { name: 'booking'; coach: Coach }
 
 export function CoachesTab() {
+  const { activePlayer } = usePlayers()
   const [view, setView] = useState<View>({ name: 'directory' })
   const [filter, setFilter] =
     useState<(typeof specializationFilters)[number]>('All')
   const [notes, setNotes] = useState<CoachNote[]>([])
 
   useEffect(() => {
-    listCoachNotes().then(setNotes)
-  }, [])
+    if (!activePlayer) return
+    listCoachNotes(activePlayer.id).then(setNotes)
+  }, [activePlayer?.id])
 
   const filtered = useMemo(() => {
     if (filter === 'All') return coaches

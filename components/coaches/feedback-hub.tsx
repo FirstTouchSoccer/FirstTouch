@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import { getClip, listCoachNotes } from '@/lib/store'
 import { coachById } from '@/lib/coaches'
+import { usePlayers } from '@/lib/players-context'
 import type { Clip, CoachNote } from '@/lib/types'
 
 const typeMeta = {
@@ -28,18 +29,20 @@ export function FeedbackHub({
   clipId: string
   onBack: () => void
 }) {
+  const { activePlayer } = usePlayers()
   const [clip, setClip] = useState<Clip | null>(null)
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [activeNote, setActiveNote] = useState<CoachNote | null>(null)
   const [playing, setPlaying] = useState(false)
 
   useEffect(() => {
+    if (!activePlayer) return
     getClip(clipId).then(setClip)
-    listCoachNotes(clipId).then((n) => {
+    listCoachNotes(activePlayer.id, clipId).then((n) => {
       setNotes(n)
       setActiveNote(n[0] ?? null)
     })
-  }, [clipId])
+  }, [clipId, activePlayer?.id])
 
   if (!clip || !activeNote) {
     return (
