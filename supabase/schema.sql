@@ -88,3 +88,15 @@ create policy "own bookings" on public.session_bookings
 -- Supabase Storage. Access control for R2 is enforced in
 -- app/api/storage/*/route.ts (verifies the caller's Supabase session before
 -- issuing a presigned URL scoped to that user's own key prefix), not RLS.
+
+-- Baseline grants. Required because project creation was set up with
+-- "Automatically expose new tables" OFF (the more secure option, so nothing
+-- gets API access by accident) -- which also means these grants aren't
+-- automatic and must be explicit here, or RLS above never even gets
+-- evaluated (Postgres denies at the privilege check first).
+grant usage on schema public to authenticated;
+
+grant select, insert, update, delete on public.profiles to authenticated;
+grant select, insert, update, delete on public.clips to authenticated;
+grant select on public.coach_notes to authenticated;
+grant select, insert, update, delete on public.session_bookings to authenticated;
