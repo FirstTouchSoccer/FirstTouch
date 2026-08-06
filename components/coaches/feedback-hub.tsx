@@ -17,7 +17,7 @@ import type { Clip, CoachNote } from '@/lib/types'
 
 const typeMeta = {
   note: { icon: MessageSquare, label: 'Frame note', color: 'text-primary' },
-  voice: { icon: Mic, label: 'Voice memo', color: 'text-accent' },
+  voice: { icon: Mic, label: 'Voice memo', color: 'text-bronze' },
   video: { icon: VideoIcon, label: 'Video response', color: 'text-rose' },
 } as const
 

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Sparkles } from 'lucide-react'
 import {
   isDemoMode,
   resendVerificationEmail,
@@ -87,12 +86,14 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
 
   return (
     <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6">
-      <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          <Sparkles className="h-4 w-4" />
-        </span>
-        <h1 className="text-lg font-bold leading-none tracking-tight">First Touch</h1>
-      </div>
+      <h1 className="text-lg font-bold leading-none tracking-tight">
+        {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+      </h1>
+      <p className="mt-1.5 text-xs text-muted-foreground">
+        {mode === 'signup'
+          ? 'Start uploading clips and getting AI coaching feedback.'
+          : 'Log in to see your progress and coach feedback.'}
+      </p>
 
       {isDemoMode && (
         <p className="mt-4 rounded-xl bg-secondary px-3 py-2 text-xs text-muted-foreground">

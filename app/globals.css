@@ -36,6 +36,7 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-brand: var(--brand);
   --color-sage: var(--sage);
   --color-sage-foreground: var(--sage-foreground);
   --color-rose: var(--rose);
@@ -56,94 +57,100 @@
 
 :root {
   color-scheme: light;
-  --background: #f5f2ed;
-  --foreground: #3a3a3a;
-  --card: #fbfaf7;
-  --card-foreground: #3a3a3a;
-  --popover: #fbfaf7;
-  --popover-foreground: #3a3a3a;
-  --primary: #a0845c;
-  --primary-foreground: #fbfaf7;
-  --secondary: #ede7dc;
-  --secondary-foreground: #3a3a3a;
-  --muted: #eae4d9;
-  --muted-foreground: #8a8271;
-  --accent: #8b9e7e;
-  --accent-foreground: #fbfaf7;
-  --destructive: #b56a5e;
-  --border: #e4ddce;
-  --input: #e4ddce;
-  --ring: #a0845c;
+  /* FirstTouch brand green — the logo's own ring/mark color. Kept distinct
+     from --primary: the logo can use a punchier green than what's
+     accessible for small interactive text, so UI green is a touch darker. */
+  --brand: #1f8a4c;
 
-  --sage: #8b9e7e;
-  --sage-foreground: #fbfaf7;
-  --rose: #c9a0a0;
-  --rose-foreground: #4a3838;
-  --sand: #d4c5a9;
-  --sand-foreground: #3a3a3a;
-  --bronze: #a0845c;
-  --charcoal: #3a3a3a;
+  --background: #f6f9f6;
+  --foreground: #14151a;
+  --card: #ffffff;
+  --card-foreground: #14151a;
+  --popover: #ffffff;
+  --popover-foreground: #14151a;
+  --primary: #15703c;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf3ec;
+  --secondary-foreground: #14151a;
+  --muted: #eff1ef;
+  --muted-foreground: #5f6660;
+  --accent: #e3f0e7;
+  --accent-foreground: #14151a;
+  --destructive: #c93a30;
+  --border: #e2e6e2;
+  --input: #e2e6e2;
+  --ring: #15703c;
 
-  --chart-1: #8b9e7e;
-  --chart-2: #a0845c;
-  --chart-3: #c9a0a0;
-  --chart-4: #d4c5a9;
-  --chart-5: #3a3a3a;
+  --sage: #15703c;
+  --sage-foreground: #ffffff;
+  --rose: #c93a30;
+  --rose-foreground: #ffffff;
+  --sand: #a8875a;
+  --sand-foreground: #14151a;
+  --bronze: #8a5d08;
+  --charcoal: #14151a;
+
+  --chart-1: #15703c;
+  --chart-2: #8a5d08;
+  --chart-3: #c93a30;
+  --chart-4: #a8875a;
+  --chart-5: #14151a;
   --radius: 1rem;
-  --sidebar: #fbfaf7;
-  --sidebar-foreground: #3a3a3a;
-  --sidebar-primary: #a0845c;
-  --sidebar-primary-foreground: #fbfaf7;
-  --sidebar-accent: #ede7dc;
-  --sidebar-accent-foreground: #3a3a3a;
-  --sidebar-border: #e4ddce;
-  --sidebar-ring: #a0845c;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #14151a;
+  --sidebar-primary: #15703c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaf3ec;
+  --sidebar-accent-foreground: #14151a;
+  --sidebar-border: #e2e6e2;
+  --sidebar-ring: #15703c;
 }
 
 .dark {
   color-scheme: dark;
-  /* Moody Japanese slate */
-  --background: #1a1a18;
-  --foreground: #f5f2ed;
-  --card: #2c2c28;
-  --card-foreground: #f5f2ed;
-  --popover: #2c2c28;
-  --popover-foreground: #f5f2ed;
-  --primary: #c2a877;
-  --primary-foreground: #1a1a18;
-  --secondary: #34342f;
-  --secondary-foreground: #f5f2ed;
-  --muted: #34342f;
-  --muted-foreground: #a8a08c;
-  --accent: #8b9e7e;
-  --accent-foreground: #1a1a18;
-  --destructive: #c9857b;
-  --border: #3d3d37;
-  --input: #3d3d37;
-  --ring: #c2a877;
+  --brand: #1f8a4c;
 
-  --sage: #8b9e7e;
-  --sage-foreground: #1a1a18;
-  --rose: #c9a0a0;
-  --rose-foreground: #2c2c28;
-  --sand: #d4c5a9;
-  --sand-foreground: #1a1a18;
-  --bronze: #c2a877;
-  --charcoal: #222220;
+  --background: #0e1210;
+  --foreground: #f2f5f2;
+  --card: #171b18;
+  --card-foreground: #f2f5f2;
+  --popover: #171b18;
+  --popover-foreground: #f2f5f2;
+  --primary: #3baa6c;
+  --primary-foreground: #0e1210;
+  --secondary: #202620;
+  --secondary-foreground: #f2f5f2;
+  --muted: #202620;
+  --muted-foreground: #9ca79e;
+  --accent: #223226;
+  --accent-foreground: #f2f5f2;
+  --destructive: #e0574c;
+  --border: #2a312b;
+  --input: #2a312b;
+  --ring: #3baa6c;
 
-  --chart-1: #8b9e7e;
-  --chart-2: #c2a877;
-  --chart-3: #c9a0a0;
-  --chart-4: #d4c5a9;
-  --chart-5: #f5f2ed;
-  --sidebar: #2c2c28;
-  --sidebar-foreground: #f5f2ed;
-  --sidebar-primary: #c2a877;
-  --sidebar-primary-foreground: #1a1a18;
-  --sidebar-accent: #34342f;
-  --sidebar-accent-foreground: #f5f2ed;
-  --sidebar-border: #3d3d37;
-  --sidebar-ring: #c2a877;
+  --sage: #3baa6c;
+  --sage-foreground: #0e1210;
+  --rose: #e0574c;
+  --rose-foreground: #171b18;
+  --sand: #c2a876;
+  --sand-foreground: #0e1210;
+  --bronze: #d9a233;
+  --charcoal: #0a0c0a;
+
+  --chart-1: #3baa6c;
+  --chart-2: #d9a233;
+  --chart-3: #e0574c;
+  --chart-4: #c2a876;
+  --chart-5: #f2f5f2;
+  --sidebar: #171b18;
+  --sidebar-foreground: #f2f5f2;
+  --sidebar-primary: #3baa6c;
+  --sidebar-primary-foreground: #0e1210;
+  --sidebar-accent: #202620;
+  --sidebar-accent-foreground: #f2f5f2;
+  --sidebar-border: #2a312b;
+  --sidebar-ring: #3baa6c;
 }
 
 @layer base {

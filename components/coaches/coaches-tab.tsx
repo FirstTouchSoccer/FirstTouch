@@ -170,7 +170,7 @@ export function CoachesTab() {
               {coach.badges.map((b) => (
                 <span
                   key={b}
-                  className="rounded-md bg-accent/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent"
+                  className="rounded-md bg-sage/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage"
                 >
                   {b}
                 </span>

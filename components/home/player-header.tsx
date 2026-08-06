@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Bell, ChevronRight, TrendingUp } from 'lucide-react'
+import { LogoMark } from '@/components/logo'
 import { usePlayer } from '@/lib/player-context'
 import { listClips, listCoachNotes } from '@/lib/store'
 import { computeOvr } from '@/lib/rating'
@@ -24,7 +25,8 @@ export function PlayerHeader() {
 
   return (
     <header className="px-5 pt-6">
-      <div className="flex items-center justify-between">
+      <LogoMark className="h-6 w-6" />
+      <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative h-11 w-11 overflow-hidden rounded-full ring-2 ring-primary/30">
             <Image
