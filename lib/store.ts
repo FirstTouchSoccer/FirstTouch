@@ -43,6 +43,13 @@ function writeJson(key: string, value: unknown): void {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
+/** Access token for the current Supabase session, to authorize R2 storage routes. */
+async function authToken(): Promise<string | null> {
+  if (!supabase) return null
+  const { data } = await supabase.auth.getSession()
+  return data.session?.access_token ?? null
+}
+
 function newId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID()
   return `id-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -275,7 +282,17 @@ export async function createClip(title: string, file: File, skillTag: SkillTag):
   const id = newId()
   if (supabase) {
     const path = `${session.userId}/${id}-${file.name}`
-    await supabase.storage.from('videos').upload(path, file)
+    const token = await authToken()
+    const { url: uploadUrl } = await fetch('/api/storage/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ key: path, contentType: file.type }),
+    }).then((r) => r.json())
+    await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    })
     await supabase.from('clips').insert({
       id,
       user_id: session.userId,
@@ -331,8 +348,13 @@ export async function updateClip(
 export async function resolveVideoUrl(clip: Clip): Promise<string | null> {
   if (clip.isSample || !clip.videoKey) return null
   if (supabase) {
-    const { data } = await supabase.storage.from('videos').createSignedUrl(clip.videoKey, 60 * 60)
-    return data?.signedUrl ?? null
+    const token = await authToken()
+    const { url } = await fetch('/api/storage/download-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ key: clip.videoKey }),
+    }).then((r) => r.json())
+    return url ?? null
   }
   const blob = await getVideo(clip.videoKey)
   return blob ? URL.createObjectURL(blob) : null

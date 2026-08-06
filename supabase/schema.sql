@@ -84,8 +84,7 @@ create policy "read own coach notes" on public.coach_notes
 create policy "own bookings" on public.session_bookings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy "own videos read" on storage.objects
-  for select using (bucket_id = 'videos' and (storage.foldername(name))[1] = auth.uid()::text);
-
-create policy "own videos write" on storage.objects
-  for insert with check (bucket_id = 'videos' and (storage.foldername(name))[1] = auth.uid()::text);
+-- No storage.objects policies here: video files live in Cloudflare R2, not
+-- Supabase Storage. Access control for R2 is enforced in
+-- app/api/storage/*/route.ts (verifies the caller's Supabase session before
+-- issuing a presigned URL scoped to that user's own key prefix), not RLS.
