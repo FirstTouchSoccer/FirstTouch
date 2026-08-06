@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { Logo } from '@/components/logo'
 
 function CallbackInner() {
   const router = useRouter()
@@ -50,10 +51,10 @@ function CallbackInner() {
   }, [params, router])
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background p-6">
+    <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-background p-6">
+      <Logo size="lg" />
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center">
-        <h1 className="text-lg font-bold">First Touch</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {error ?? 'Confirming your email…'}
         </p>
         {error && (

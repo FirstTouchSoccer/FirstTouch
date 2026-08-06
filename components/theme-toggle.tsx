@@ -11,7 +11,11 @@ export function ThemeToggle({ className }: { className?: string }) {
 
   useEffect(() => setMounted(true), [])
 
-  const isDark = resolvedTheme === 'dark'
+  // Guard on `mounted`, not just resolvedTheme: on the server (and the
+  // client's very first paint, before hydration settles) resolvedTheme is
+  // always undefined, so isDark must stay false until after mount or this
+  // attribute won't match what the server actually rendered.
+  const isDark = mounted && resolvedTheme === 'dark'
 
   return (
     <button
