@@ -88,6 +88,12 @@ export interface Feedback {
   createdAt: string
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: string
+}
+
 export interface Clip {
   id: string
   title: string
@@ -98,6 +104,7 @@ export interface Clip {
   status: ClipStatus
   metrics?: PoseMetrics
   feedback?: Feedback
+  chat?: ChatMessage[] // follow-up Q&A about this clip's feedback
   createdAt: string
 }
 

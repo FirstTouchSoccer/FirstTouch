@@ -26,6 +26,7 @@ create table if not exists public.clips (
   -- output can never be confused with a real coach's review.
   metrics jsonb,
   feedback jsonb,
+  chat jsonb, -- follow-up Q&A thread about this clip's feedback, capped client+server side
   created_at timestamptz not null default now()
 );
 

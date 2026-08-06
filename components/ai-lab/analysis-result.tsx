@@ -3,7 +3,8 @@
 import { TrendingUp, TrendingDown, Dumbbell, RotateCcw, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { movementReads, type Band } from '@/lib/read'
-import type { Clip } from '@/lib/types'
+import { AnalysisChat } from '@/components/ai-lab/analysis-chat'
+import type { Clip, PlayerProfile } from '@/lib/types'
 
 const bandStyle: Record<Band, string> = {
   Developing: 'bg-secondary text-muted-foreground',
@@ -11,7 +12,17 @@ const bandStyle: Record<Band, string> = {
   Strong: 'bg-sage text-sage-foreground',
 }
 
-export function AnalysisResult({ clip, onReset }: { clip: Clip; onReset: () => void }) {
+export function AnalysisResult({
+  clip,
+  profile,
+  onReset,
+  onClipUpdate,
+}: {
+  clip: Clip
+  profile: PlayerProfile
+  onReset: () => void
+  onClipUpdate: (clip: Clip) => void
+}) {
   const { metrics, feedback } = clip
   if (!metrics || !feedback) return null
 
@@ -128,6 +139,8 @@ export function AnalysisResult({ clip, onReset }: { clip: Clip; onReset: () => v
           ))}
         </div>
       </div>
+
+      <AnalysisChat clip={clip} profile={profile} onClipUpdate={onClipUpdate} />
 
       <p className="mt-4 text-center text-[11px] text-muted-foreground text-balance">
         This is AI-generated feedback, not a human coach&apos;s review. A real coach may

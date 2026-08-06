@@ -312,7 +312,7 @@ export async function createClip(title: string, file: File, skillTag: SkillTag):
 
 export async function updateClip(
   id: string,
-  patch: Partial<Pick<Clip, 'status' | 'metrics' | 'feedback'>>
+  patch: Partial<Pick<Clip, 'status' | 'metrics' | 'feedback' | 'chat'>>
 ): Promise<void> {
   const session = await requireSession()
   if (supabase) {
@@ -320,6 +320,7 @@ export async function updateClip(
     if (patch.status !== undefined) row.status = patch.status
     if (patch.metrics !== undefined) row.metrics = patch.metrics
     if (patch.feedback !== undefined) row.feedback = patch.feedback
+    if (patch.chat !== undefined) row.chat = patch.chat
     await supabase.from('clips').update(row).eq('id', id).eq('user_id', session.userId)
     return
   }
@@ -347,6 +348,7 @@ function rowToClip(row: any): Clip {
     status: row.status,
     metrics: row.metrics ?? undefined,
     feedback: row.feedback ?? undefined,
+    chat: row.chat ?? undefined,
     createdAt: row.created_at,
   }
 }

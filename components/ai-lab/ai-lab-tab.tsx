@@ -239,8 +239,8 @@ export function AiLabTab() {
           />
         )}
 
-        {phase === 'result' && savedClip && savedClip.feedback && (
-          <AnalysisResult clip={savedClip} onReset={reset} />
+        {phase === 'result' && savedClip && savedClip.feedback && profile && (
+          <AnalysisResult clip={savedClip} profile={profile} onReset={reset} onClipUpdate={setSavedClip} />
         )}
 
         {phase === 'result' && savedClip && !savedClip.feedback && (
