@@ -66,8 +66,14 @@ create policy "own profile" on public.profiles
 create policy "own clips" on public.clips
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy "own coach notes" on public.coach_notes
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- Read-only for players: coach_notes represent feedback FROM a coach, not
+-- the player. No insert/update/delete policy is granted here on purpose —
+-- without one, only the service-role key (server-side, bypasses RLS) can
+-- write a note. Without this, a player could forge their own "coach
+-- feedback" through the anon key, since createCoachNote() has no server-side
+-- gate of its own today.
+create policy "read own coach notes" on public.coach_notes
+  for select using (auth.uid() = user_id);
 
 create policy "own bookings" on public.session_bookings
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
