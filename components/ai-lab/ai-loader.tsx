@@ -9,19 +9,30 @@ type Props = {
   onComplete: () => void
   stepMs?: number
   title?: string
+  /** When provided, the loader reflects real progress instead of a fixed timer. */
+  activeStep?: number
 }
 
-export function AiLoader({ steps, onComplete, stepMs = 1100, title = 'Saving your clip' }: Props) {
-  const [active, setActive] = useState(0)
+export function AiLoader({
+  steps,
+  onComplete,
+  stepMs = 1100,
+  title = 'Saving your clip',
+  activeStep,
+}: Props) {
+  const [internalActive, setInternalActive] = useState(0)
+  const controlled = activeStep !== undefined
+  const active = controlled ? activeStep : internalActive
 
   useEffect(() => {
-    if (active >= steps.length) {
+    if (controlled) return
+    if (internalActive >= steps.length) {
       const t = setTimeout(onComplete, 500)
       return () => clearTimeout(t)
     }
-    const t = setTimeout(() => setActive((a) => a + 1), stepMs)
+    const t = setTimeout(() => setInternalActive((a) => a + 1), stepMs)
     return () => clearTimeout(t)
-  }, [active, steps.length, stepMs, onComplete])
+  }, [controlled, internalActive, steps.length, stepMs, onComplete])
 
   const pct = Math.min(100, Math.round((active / steps.length) * 100))
 

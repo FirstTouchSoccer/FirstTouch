@@ -20,7 +20,12 @@ create table if not exists public.clips (
   skill_tag text not null default 'full-match',
   video_path text not null default '',
   is_sample boolean not null default false,
-  status text not null default 'uploaded', -- uploaded | sent_to_coach
+  status text not null default 'uploaded', -- uploaded | analyzing | analyzed | sent_to_coach
+  -- AI-generated (pose metrics + Claude feedback), never human-authored. Kept
+  -- on the clip itself, deliberately separate from coach_notes below, so AI
+  -- output can never be confused with a real coach's review.
+  metrics jsonb,
+  feedback jsonb,
   created_at timestamptz not null default now()
 );
 

@@ -310,10 +310,17 @@ export async function createClip(title: string, file: File, skillTag: SkillTag):
   return clip
 }
 
-export async function updateClip(id: string, patch: Partial<Pick<Clip, 'status'>>): Promise<void> {
+export async function updateClip(
+  id: string,
+  patch: Partial<Pick<Clip, 'status' | 'metrics' | 'feedback'>>
+): Promise<void> {
   const session = await requireSession()
   if (supabase) {
-    await supabase.from('clips').update(patch).eq('id', id).eq('user_id', session.userId)
+    const row: Record<string, unknown> = {}
+    if (patch.status !== undefined) row.status = patch.status
+    if (patch.metrics !== undefined) row.metrics = patch.metrics
+    if (patch.feedback !== undefined) row.feedback = patch.feedback
+    await supabase.from('clips').update(row).eq('id', id).eq('user_id', session.userId)
     return
   }
   const clips = readJson<Clip[]>(clipsKey(session.userId)) ?? []
@@ -338,6 +345,8 @@ function rowToClip(row: any): Clip {
     videoKey: row.video_path,
     isSample: row.is_sample,
     status: row.status,
+    metrics: row.metrics ?? undefined,
+    feedback: row.feedback ?? undefined,
     createdAt: row.created_at,
   }
 }

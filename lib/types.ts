@@ -35,7 +35,7 @@ export interface PlayerProfile {
   createdAt: string
 }
 
-export type ClipStatus = 'uploaded' | 'sent_to_coach'
+export type ClipStatus = 'uploaded' | 'analyzing' | 'analyzed' | 'sent_to_coach'
 
 export type SkillTag =
   | 'shot-velocity'
@@ -43,6 +43,50 @@ export type SkillTag =
   | 'penalty-placement'
   | '1v1-dribble'
   | 'full-match'
+
+/** Movement metrics extracted from a clip (MediaPipe Pose, or simulated fallback). */
+export interface PoseMetrics {
+  source: 'mediapipe' | 'simulated'
+  framesAnalyzed: number
+  durationSec: number
+  avgKneeFlexionL: number
+  avgKneeFlexionR: number
+  kneeSymmetry: number
+  hipStability: number
+  armBalance: number
+  movementIntensity: number
+  posturalLean: number
+}
+
+export interface DrillItem {
+  name: string
+  description: string
+  duration: string
+}
+
+export interface TrainingDay {
+  day: string
+  focus: string
+  drills: DrillItem[]
+}
+
+export interface Scores {
+  technique: number
+  balance: number
+  movement: number
+  consistency: number
+  athleticism: number
+}
+
+export interface Feedback {
+  source: 'claude' | 'mock'
+  summary: string
+  strengths: string[]
+  improvements: string[]
+  scores: Scores
+  trainingPlan: TrainingDay[]
+  createdAt: string
+}
 
 export interface Clip {
   id: string
@@ -52,6 +96,8 @@ export interface Clip {
   thumbnailUrl?: string // sample clips only — real uploads have no stored thumbnail yet
   isSample: boolean
   status: ClipStatus
+  metrics?: PoseMetrics
+  feedback?: Feedback
   createdAt: string
 }
 
