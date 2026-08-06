@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { movementReads } from '@/lib/read'
+import { isTrustedOrigin } from '@/lib/verify-origin'
 import type { PlayerProfile, PoseMetrics } from '@/lib/types'
 
 export const maxDuration = 120
@@ -78,6 +79,9 @@ Write encouraging but honest, specific feedback a club-soccer parent would find 
 - Keep language positive and parent-friendly; never shame the player. This is developmental guidance, not medical or injury advice.`
 
 export async function POST(req: Request) {
+  if (!isTrustedOrigin(req)) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
   const { profile, metrics, clipTitle } = (await req.json()) as {
     profile: Pick<PlayerProfile, 'name' | 'age' | 'position' | 'attributes'>
     metrics: PoseMetrics

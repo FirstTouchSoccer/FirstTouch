@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildMockChatReply, MAX_CHAT_TURNS } from '@/lib/mock-chat'
 import { movementReads } from '@/lib/read'
+import { isTrustedOrigin } from '@/lib/verify-origin'
 import type { ChatMessage, Feedback, PlayerProfile, PoseMetrics } from '@/lib/types'
 
 export const maxDuration = 60
@@ -16,6 +17,9 @@ If asked something unrelated to this player's development (medical concerns, oth
 outside soccer coaching), gently redirect to booking time with a human coach instead of answering.`
 
 export async function POST(req: Request) {
+  if (!isTrustedOrigin(req)) {
+    return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
   const { profile, metrics, feedback, clipTitle, history, question } = (await req.json()) as {
     profile: Pick<PlayerProfile, 'name' | 'age' | 'position' | 'attributes'>
     metrics: PoseMetrics
