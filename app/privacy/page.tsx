@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       </Link>
       <div className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 sm:p-8">
         <h1 className="text-xl font-bold tracking-tight">Privacy Policy</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated August 6, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated August 7, 2026</p>
 
         <div className="prose-sm mt-6 flex flex-col gap-5 text-sm leading-relaxed text-foreground">
           <p>
@@ -71,13 +71,16 @@ export default function PrivacyPage() {
                 <span className="text-foreground">Anthropic</span> — generates the AI coaching feedback. It
                 receives the derived movement metrics and basic player info (name, age, position) needed to
                 write personalized feedback — it does <span className="italic">not</span> receive your raw
-                video.
+                video, and that data is used only to generate the specific feedback you requested. It is not
+                used to train AI models, for advertising, or for any purpose beyond producing that response.
               </li>
+              <li><span className="text-foreground">Stripe</span> — processes payment for a Pro subscription. It receives the parent/guardian&apos;s billing information only; player profiles and video/movement data are never sent to Stripe.</li>
               <li><span className="text-foreground">Netlify</span> — hosts the website itself.</li>
             </ul>
             <p className="mt-1.5 text-muted-foreground">
               A human coach only sees a clip or its data if you explicitly send that clip to them from
-              within the app.
+              within the app. We don&apos;t run advertising trackers or sell or share any player&apos;s
+              information for behavioral advertising.
             </p>
           </section>
 
@@ -92,12 +95,17 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold">Your rights, and your child&apos;s</h2>
+            <h2 className="text-sm font-bold">Your rights, and your child&apos;s (COPPA)</h2>
             <p className="mt-1.5 text-muted-foreground">
-              You can request a copy of, or the deletion of, your account&apos;s data (including any
-              player profiles under it) at any time by emailing us — see below. We don&apos;t yet have a
-              self-serve delete button in the app itself, so these requests are handled manually; we&apos;ll
-              confirm once it&apos;s done.
+              Because FirstTouch is used by children under 13, we handle player data in line with the
+              Children&apos;s Online Privacy Protection Act (COPPA). As the parent/guardian who created a
+              player&apos;s profile, you can at any time: review the personal information we&apos;ve
+              collected about your child, request that we delete it, and refuse to let us collect any further
+              information from or about your child — simply by emailing us (see below) or stopping use of the
+              app. We only collect what&apos;s needed to run the features you&apos;ve used (analysis, coach
+              notes, bookings), we don&apos;t condition access to core features on collecting more than
+              that, and we don&apos;t yet have a self-serve delete button in the app itself, so these
+              requests are handled manually — we&apos;ll confirm once it&apos;s done.
             </p>
           </section>
 

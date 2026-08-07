@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { MessageCircle, Send, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { updateClip } from '@/lib/store'
+import { authToken, updateClip } from '@/lib/store'
 import { buildMockChatReply, MAX_CHAT_TURNS } from '@/lib/mock-chat'
 import type { ChatMessage, Clip, Player } from '@/lib/types'
 
@@ -37,9 +37,13 @@ export function AnalysisChat({
 
     let replyText: string
     try {
+      const token = await authToken()
       const res = await fetch('/api/feedback/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           profile: {
             name: profile.name,
