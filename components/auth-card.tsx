@@ -111,6 +111,24 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           : 'Log in to see your progress and coach feedback.'}
       </p>
 
+      <p className="mt-2 text-xs text-muted-foreground">
+        {mode === 'signup' ? (
+          <>
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold text-foreground underline underline-offset-2">
+              Log in
+            </Link>
+          </>
+        ) : (
+          <>
+            New here?{' '}
+            <Link href="/signup" className="font-semibold text-foreground underline underline-offset-2">
+              Create an account
+            </Link>
+          </>
+        )}
+      </p>
+
       {isDemoMode && (
         <p className="mt-4 rounded-xl bg-secondary px-3 py-2 text-xs text-muted-foreground">
           Demo mode — no backend configured. Any email &amp; password works; your data stays in this browser.
@@ -187,25 +205,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
         </button>
       )}
 
-      <p className="mt-5 text-center text-xs text-muted-foreground">
-        {mode === 'signup' ? (
-          <>
-            Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-foreground underline underline-offset-2">
-              Log in
-            </Link>
-          </>
-        ) : (
-          <>
-            New here?{' '}
-            <Link href="/signup" className="font-semibold text-foreground underline underline-offset-2">
-              Create an account
-            </Link>
-          </>
-        )}
-      </p>
-
-      <p className="mt-4 text-center text-[11px] text-muted-foreground">
+      <p className="mt-5 text-center text-[11px] text-muted-foreground">
         <Link href="/terms" className="underline underline-offset-2">
           Terms of Service
         </Link>{' '}
