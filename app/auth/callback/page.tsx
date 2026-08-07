@@ -9,6 +9,7 @@ function CallbackInner() {
   const router = useRouter()
   const params = useSearchParams()
   const [error, setError] = useState<string | null>(null)
+  const [confirmed, setConfirmed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -37,12 +38,23 @@ function CallbackInner() {
       for (let attempt = 0; attempt < 10; attempt++) {
         const { data } = await supabase!.auth.getSession()
         if (data.session) {
-          if (!cancelled) router.replace('/')
+          if (cancelled) return
+          // Show a clear success state for a beat before redirecting —
+          // jumping straight to '/' made a working confirmation look like a
+          // blank/broken page to real users, who reported it as "empty."
+          setConfirmed(true)
+          setTimeout(() => {
+            if (!cancelled) router.replace('/')
+          }, 1400)
           return
         }
         await new Promise((r) => setTimeout(r, 300))
       }
-      if (!cancelled) setError('This link has expired or was already used.')
+      if (!cancelled) {
+        setError(
+          "This link has expired or was already used. If your email app scans links automatically, your account may already be confirmed — try logging in directly."
+        )
+      }
     })()
 
     return () => {
@@ -55,11 +67,11 @@ function CallbackInner() {
       <Logo size="lg" />
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center">
         <p className="text-sm text-muted-foreground">
-          {error ?? 'Confirming your email…'}
+          {error ?? (confirmed ? "You're confirmed! Taking you in…" : 'Confirming your email…')}
         </p>
         {error && (
-          <a href="/signup" className="mt-4 block text-xs font-semibold text-foreground underline underline-offset-2">
-            Back to signup
+          <a href="/login" className="mt-4 block text-xs font-semibold text-foreground underline underline-offset-2">
+            Go to login
           </a>
         )}
       </div>

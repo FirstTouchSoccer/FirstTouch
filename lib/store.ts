@@ -78,7 +78,7 @@ function buildPlayer(
     id,
     accountId,
     name,
-    avatarUrl: '/player-avatar.png',
+    avatarUrl: '',
     position: 'CAM',
     age,
     experience,

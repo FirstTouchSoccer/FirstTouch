@@ -122,6 +122,16 @@ export function CoachesTab() {
           </span>
         </h2>
 
+        {coaches.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center">
+            <p className="text-sm font-bold">Human coaches are coming soon</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              We&apos;re onboarding real coaches for 1-on-1 sessions and timestamped video feedback. In the
+              meantime, your AI Lab analysis is ready whenever you upload a clip.
+            </p>
+          </div>
+        )}
+
         {filtered.map((coach) => (
           <div
             key={coach.id}

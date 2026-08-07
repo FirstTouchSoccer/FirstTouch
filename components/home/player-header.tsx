@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { Bell, ChevronRight, TrendingUp } from 'lucide-react'
 import { LogoMark } from '@/components/logo'
+import { PlayerAvatar } from '@/components/player-avatar'
 import { usePlayers } from '@/lib/players-context'
 import { listClips, listCoachNotes } from '@/lib/store'
 import { computeOvr } from '@/lib/rating'
@@ -30,13 +30,7 @@ export function PlayerHeader() {
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative h-11 w-11 overflow-hidden rounded-full ring-2 ring-primary/30">
-            <Image
-              src={profile.avatarUrl}
-              alt={profile.name}
-              fill
-              className="object-cover"
-              sizes="44px"
-            />
+            <PlayerAvatar name={profile.name} avatarUrl={profile.avatarUrl} sizePx={44} />
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Good afternoon,</p>

@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { BadgeCheck, MapPin, LogOut, Film, MessageSquareText, Trophy, Flame } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { PlayerAvatar } from '@/components/player-avatar'
 import { usePlayers } from '@/lib/players-context'
 import { listBookings, listClips, listCoachNotes, signOut } from '@/lib/store'
 import { computeOvr, computeStreak } from '@/lib/rating'
@@ -63,13 +63,7 @@ export function ProfileHeader() {
       <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card transition-colors duration-200">
         <div className="flex items-center gap-4 p-5">
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl ring-2 ring-border">
-            <Image
-              src={profile.avatarUrl}
-              alt={profile.name}
-              fill
-              className="object-cover"
-              sizes="80px"
-            />
+            <PlayerAvatar name={profile.name} avatarUrl={profile.avatarUrl} sizePx={80} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
