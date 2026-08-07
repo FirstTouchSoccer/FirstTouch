@@ -1,13 +1,21 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createPlayer, getSession, isDemoMode, listPlayers } from '@/lib/store'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createPlayer, getBillingStatus, getSession, isDemoMode, listPlayers } from '@/lib/store'
 import { PlayersContext } from '@/lib/players-context'
 import { emptyPlayerFields, PlayerFieldsForm, type PlayerFieldsValues } from '@/components/player-fields-form'
 import { ConsentCheckbox } from '@/components/consent-checkbox'
 import { Logo } from '@/components/logo'
-import type { Player } from '@/lib/types'
+import type { BillingStatus, Player } from '@/lib/types'
+
+const DEFAULT_BILLING: BillingStatus = {
+  subscriptionStatus: 'none',
+  isEntitled: false,
+  freeAnalysesUsed: 0,
+  freeAnalysesLimit: 2,
+  currentPeriodEnd: null,
+}
 
 function activePlayerStorageKey(userId: string): string {
   return `ft_active_player:${userId}`
@@ -18,6 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [activePlayerId, setActivePlayerIdState] = useState<string | null>(null)
+  const [billing, setBilling] = useState<BillingStatus>(DEFAULT_BILLING)
   const [ready, setReady] = useState(false)
 
   const refreshPlayersList = useCallback(async () => {
@@ -29,6 +38,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const refreshPlayers = useCallback(async () => {
     await refreshPlayersList()
   }, [refreshPlayersList])
+
+  const refreshBilling = useCallback(async () => {
+    setBilling(await getBillingStatus())
+  }, [])
 
   const setActivePlayerId = useCallback(
     (id: string) => {
@@ -46,7 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         router.replace('/login')
         return
       }
-      const list = await refreshPlayersList()
+      const [list] = await Promise.all([refreshPlayersList(), refreshBilling()])
       if (cancelled) return
       setUserId(session.userId)
       const savedId = localStorage.getItem(activePlayerStorageKey(session.userId))
@@ -57,7 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [router, refreshPlayersList])
+  }, [router, refreshPlayersList, refreshBilling])
 
   if (!ready) {
     return (
@@ -84,7 +97,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const activePlayer = players.find((p) => p.id === activePlayerId) ?? players[0]
 
   return (
-    <PlayersContext.Provider value={{ players, activePlayer, setActivePlayerId, refreshPlayers }}>
+    <PlayersContext.Provider value={{ players, activePlayer, setActivePlayerId, refreshPlayers, billing, refreshBilling }}>
+      <Suspense fallback={null}>
+        <BillingRedirectWatcher refreshBilling={refreshBilling} />
+      </Suspense>
       {isDemoMode && (
         <div className="bg-secondary px-4 py-2 text-center text-[11px] font-medium text-muted-foreground">
           Demo mode — data lives in this browser, not a server.
@@ -93,6 +109,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {children}
     </PlayersContext.Provider>
   )
+}
+
+/**
+ * Checkout redirects back here with ?billing=success|cancelled. The Stripe
+ * webhook may land a beat after this redirect, so refetch once more before
+ * clearing the param rather than trusting the first read. Split out into its
+ * own component (rather than a top-level useEffect in AppLayout) because
+ * useSearchParams() requires a Suspense boundary to avoid bailing the whole
+ * route out of static rendering.
+ */
+function BillingRedirectWatcher({ refreshBilling }: { refreshBilling: () => Promise<void> }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const billingParam = searchParams.get('billing')
+    if (billingParam === 'success') {
+      refreshBilling().finally(() => router.replace('/'))
+    } else if (billingParam === 'cancelled') {
+      router.replace('/')
+    }
+  }, [searchParams, refreshBilling, router])
+
+  return null
 }
 
 function RecoverPlayerScreen({ onCreated }: { onCreated: (player: Player) => void }) {

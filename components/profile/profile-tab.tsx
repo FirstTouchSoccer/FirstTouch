@@ -2,6 +2,7 @@ import { ProfileHeader } from '@/components/profile/profile-header'
 import { SkillRadar } from '@/components/profile/skill-radar'
 import { MediaGrid } from '@/components/profile/media-grid'
 import { ActivityHistory } from '@/components/profile/activity-history'
+import { BillingCard } from '@/components/profile/billing-card'
 
 export function ProfileTab() {
   return (
@@ -9,6 +10,7 @@ export function ProfileTab() {
       <ProfileHeader />
       <SkillRadar />
       <MediaGrid />
+      <BillingCard />
       <ActivityHistory />
     </div>
   )

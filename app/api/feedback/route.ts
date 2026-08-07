@@ -2,6 +2,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { movementReads } from '@/lib/read'
 import { isTrustedOrigin } from '@/lib/verify-origin'
+import { supabase, supabaseConfigured } from '@/lib/supabase'
+import { checkAndConsumeUsage } from '@/lib/billing-server'
 import { experienceLabel, type Player, type PoseMetrics } from '@/lib/types'
 
 export const maxDuration = 120
@@ -82,6 +84,34 @@ export async function POST(req: Request) {
   if (!isTrustedOrigin(req)) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  // Real auth + usage gating only applies when Supabase is configured at all.
+  // The local-dev demo-mode fallback (no backend, no session) is exempt so it
+  // keeps working exactly as it does today.
+  if (supabaseConfigured) {
+    const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+    if (!token) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { data, error } = await supabase!.auth.getUser(token)
+    if (error || !data.user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    try {
+      const usage = await checkAndConsumeUsage(data.user.id)
+      if (!usage.allowed) {
+        return Response.json(
+          { error: 'free_limit_reached', message: "You've used both free analyses — upgrade to keep going." },
+          { status: 402 },
+        )
+      }
+    } catch (err) {
+      console.error('Billing usage check failed:', err)
+      return Response.json({ error: 'billing_check_failed' }, { status: 500 })
+    }
+  }
+
   const { profile, metrics, clipTitle } = (await req.json()) as {
     profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
     metrics: PoseMetrics

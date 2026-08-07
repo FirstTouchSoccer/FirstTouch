@@ -186,3 +186,34 @@ grant select, insert, update, delete on public.players to authenticated;
 grant select, insert, update, delete on public.clips to authenticated;
 grant select on public.coach_notes to authenticated;
 grant select, insert, update, delete on public.session_bookings to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Billing: account-wide subscription state (Stripe). One row per auth.users,
+-- not per player -- one subscription unlocks unlimited AI analyses for every
+-- player under the account, and the free-analysis pool below is shared across
+-- all of an account's players rather than given per-child.
+-- ---------------------------------------------------------------------------
+create table if not exists public.billing_accounts (
+  account_id uuid primary key references auth.users (id) on delete cascade,
+  stripe_customer_id text unique,
+  stripe_subscription_id text unique,
+  subscription_status text not null default 'none', -- none | active | trialing | past_due | canceled | unpaid | incomplete | incomplete_expired | paused
+  free_analyses_used int not null default 0,
+  free_analyses_limit int not null default 2,
+  current_period_end timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.billing_accounts enable row level security;
+
+-- Read-only for the account owner. No insert/update/delete policy on purpose --
+-- writes only happen via the service-role key (usage-gate increments, and the
+-- Stripe webhook), same "service-role only" shape as coach_notes writes above.
+-- Without this, a user could forge their own "active subscription" through
+-- the anon key.
+drop policy if exists "own billing_accounts" on public.billing_accounts;
+create policy "own billing_accounts" on public.billing_accounts
+  for select using (auth.uid() = account_id);
+
+grant select on public.billing_accounts to authenticated;

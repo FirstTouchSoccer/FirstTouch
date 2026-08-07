@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils'
 import { AiLoader } from '@/components/ai-lab/ai-loader'
 import { UploadResult } from '@/components/ai-lab/upload-result'
 import { AnalysisResult } from '@/components/ai-lab/analysis-result'
-import { createClip, updateClip } from '@/lib/store'
+import { authToken, createClip, startCheckout, updateClip } from '@/lib/store'
 import { analyzeVideo } from '@/lib/pose'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { usePlayers } from '@/lib/players-context'
@@ -87,7 +87,7 @@ const matchSteps = [
 ]
 
 export function AiLabTab() {
-  const { activePlayer: profile } = usePlayers()
+  const { activePlayer: profile, billing, refreshBilling } = usePlayers()
   const [mode, setMode] = useState<Mode>('skill')
   const [phase, setPhase] = useState<Phase>('idle')
   const [skill, setSkill] = useState(skills[0])
@@ -96,7 +96,21 @@ export function AiLabTab() {
   const [fileError, setFileError] = useState<string | null>(null)
   const [savedClip, setSavedClip] = useState<Clip | null>(null)
   const [activeStep, setActiveStep] = useState(0)
+  const [paywallNotice, setPaywallNotice] = useState(false)
+  const [checkoutBusy, setCheckoutBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const paywalled = !billing.isEntitled && billing.freeAnalysesUsed >= billing.freeAnalysesLimit
+  const freeRemaining = Math.max(0, billing.freeAnalysesLimit - billing.freeAnalysesUsed)
+
+  async function upgrade() {
+    setCheckoutBusy(true)
+    try {
+      window.location.href = await startCheckout()
+    } catch {
+      setCheckoutBusy(false)
+    }
+  }
 
   function reset() {
     setPhase('idle')
@@ -105,6 +119,7 @@ export function AiLabTab() {
     setFileError(null)
     setSavedClip(null)
     setActiveStep(0)
+    setPaywallNotice(false)
   }
 
   function switchMode(m: Mode) {
@@ -156,7 +171,7 @@ export function AiLabTab() {
     try {
       const res = await fetch('/api/feedback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await authToken()}` },
         body: JSON.stringify({
           profile: {
             name: profile.name,
@@ -169,12 +184,23 @@ export function AiLabTab() {
           clipTitle: title,
         }),
       })
+      if (res.status === 402) {
+        // Free pool was exhausted server-side between page load and this
+        // upload (stale client cache, or another device on the same
+        // account). The clip stays as-is (uploaded, no feedback) — nothing
+        // to undo, just surface the upgrade prompt instead of a result.
+        refreshBilling()
+        setPhase('idle')
+        setPaywallNotice(true)
+        return
+      }
       const data = await res.json()
       feedback = data.feedback
     } catch {
       feedback = buildMockFeedback(profile, metrics)
     }
 
+    refreshBilling()
     setActiveStep(3)
     await updateClip(clip.id, { status: 'analyzed', metrics, feedback })
     setSavedClip({ ...clip, status: 'analyzed', metrics, feedback })
@@ -315,15 +341,38 @@ export function AiLabTab() {
               <p className="mt-2 text-xs font-medium text-rose">{fileError}</p>
             )}
 
-            <button
-              type="button"
-              onClick={() => runUpload(skill.id, skill.label)}
-              disabled={!file}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
-            >
-              <Sparkles className="h-4 w-4" />
-              Analyze {skill.label}
-            </button>
+            {paywallNotice && (
+              <p className="mt-2 text-xs font-medium text-rose">
+                You&apos;ve used both free analyses — upgrade to keep going.
+              </p>
+            )}
+            {!paywallNotice && !billing.isEntitled && !paywalled && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {freeRemaining} free analysis{freeRemaining === 1 ? '' : 'es'} left on your account.
+              </p>
+            )}
+
+            {paywalled ? (
+              <button
+                type="button"
+                onClick={upgrade}
+                disabled={checkoutBusy}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
+              >
+                <Sparkles className="h-4 w-4" />
+                {checkoutBusy ? 'Redirecting…' : 'Upgrade to Pro — $20/mo'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => runUpload(skill.id, skill.label)}
+                disabled={!file}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
+              >
+                <Sparkles className="h-4 w-4" />
+                Analyze {skill.label}
+              </button>
+            )}
           </div>
         )}
 

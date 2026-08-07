@@ -3,6 +3,7 @@
 import { supabase, supabaseConfigured } from '@/lib/supabase'
 import { getVideo, putVideo } from '@/lib/idb'
 import type {
+  BillingStatus,
   Clip,
   CoachNote,
   ExperienceLevel,
@@ -10,7 +11,9 @@ import type {
   Session,
   SessionBooking,
   SkillTag,
+  SubscriptionStatus,
 } from '@/lib/types'
+import { isEntitledStatus } from '@/lib/types'
 import {
   DEMO_EMAIL,
   DEMO_PASSWORD,
@@ -44,8 +47,8 @@ function writeJson(key: string, value: unknown): void {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
-/** Access token for the current Supabase session, to authorize R2 storage routes. */
-async function authToken(): Promise<string | null> {
+/** Access token for the current Supabase session, to authorize R2 storage / billing routes. */
+export async function authToken(): Promise<string | null> {
   if (!supabase) return null
   const { data } = await supabase.auth.getSession()
   return data.session?.access_token ?? null
@@ -341,6 +344,79 @@ function rowToPlayer(row: any): Player {
     },
     consentedAt: row.consented_at,
     createdAt: row.created_at,
+  }
+}
+
+// ---------- Billing ----------
+
+const DEMO_BILLING_STATUS: BillingStatus = {
+  subscriptionStatus: 'active',
+  isEntitled: true,
+  freeAnalysesUsed: 0,
+  freeAnalysesLimit: 2,
+  currentPeriodEnd: null,
+}
+
+const NO_BILLING_ROW_STATUS: BillingStatus = {
+  subscriptionStatus: 'none',
+  isEntitled: false,
+  freeAnalysesUsed: 0,
+  freeAnalysesLimit: 2,
+  currentPeriodEnd: null,
+}
+
+/**
+ * Reads the account's subscription/usage state directly via the anon client —
+ * billing_accounts' RLS policy grants select on the caller's own row, so no
+ * API route is needed here, same as any other read in this file.
+ *
+ * Demo mode reports unlimited/entitled rather than a real paywall state,
+ * since /api/feedback exempts demo mode from gating entirely — showing a
+ * free-tier paywall the backend will never actually enforce would be
+ * misleading, not honest-by-default.
+ */
+export async function getBillingStatus(): Promise<BillingStatus> {
+  const session = await getSession()
+  if (!session) return NO_BILLING_ROW_STATUS
+  if (supabase) {
+    const { data } = await supabase.from('billing_accounts').select('*').eq('account_id', session.userId).maybeSingle()
+    // No row yet is normal — it's lazily created server-side on first checkout
+    // or first /api/feedback call, not at signup.
+    return data ? rowToBillingStatus(data) : NO_BILLING_ROW_STATUS
+  }
+  return DEMO_BILLING_STATUS
+}
+
+/** Starts a Stripe Checkout session for the Pro subscription; returns the redirect URL. */
+export async function startCheckout(): Promise<string> {
+  const res = await fetch('/api/billing/checkout', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await authToken()}` },
+  })
+  if (!res.ok) throw new Error('Could not start checkout.')
+  const { url } = await res.json()
+  return url
+}
+
+/** Opens the Stripe Customer Portal for managing/cancelling; returns the redirect URL. */
+export async function openBillingPortal(): Promise<string> {
+  const res = await fetch('/api/billing/portal', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await authToken()}` },
+  })
+  if (!res.ok) throw new Error('Could not open billing portal.')
+  const { url } = await res.json()
+  return url
+}
+
+function rowToBillingStatus(row: any): BillingStatus {
+  const subscriptionStatus = row.subscription_status as SubscriptionStatus
+  return {
+    subscriptionStatus,
+    isEntitled: isEntitledStatus(subscriptionStatus),
+    freeAnalysesUsed: row.free_analyses_used,
+    freeAnalysesLimit: row.free_analyses_limit,
+    currentPeriodEnd: row.current_period_end,
   }
 }
 

@@ -11,7 +11,7 @@ export default function TermsPage() {
       </Link>
       <div className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 sm:p-8">
         <h1 className="text-xl font-bold tracking-tight">Terms of Service</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Last updated August 6, 2026</p>
+        <p className="mt-1 text-xs text-muted-foreground">Last updated August 7, 2026</p>
 
         <div className="prose-sm mt-6 flex flex-col gap-5 text-sm leading-relaxed text-foreground">
           <p>
@@ -38,9 +38,26 @@ export default function TermsPage() {
             <p className="mt-1.5 text-muted-foreground">
               FirstTouch lets you upload soccer training clips, receive AI-generated movement analysis and
               coaching feedback on them, ask follow-up questions about that feedback, receive notes from
-              human coaches, and book coaching sessions. FirstTouch does not currently process any payments
-              — booking a session through the app does not charge you; any future paid features will come
-              with their own clearly-disclosed terms before you&apos;re asked to pay anything.
+              human coaches, and book coaching sessions. Every account gets 2 free AI analyses; beyond that,
+              a FirstTouch Pro subscription is required — see &quot;Subscription &amp; billing&quot; below.
+              Booking a coaching session itself does not separately charge you.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-bold">Subscription &amp; billing</h2>
+            <p className="mt-1.5 text-muted-foreground">
+              FirstTouch Pro is a monthly subscription, billed to the parent/guardian account (not per
+              player) through our payment processor, Stripe — one subscription covers unlimited AI analyses
+              for every player on your account. The list price is $40/month; new subscribers may see a
+              lower promotional rate at signup, and if you subscribe at a promotional rate you keep that
+              rate for as long as your subscription stays active without a gap. You can cancel anytime from
+              the Manage Billing screen in your Profile tab — your subscription stays active through the
+              end of the billing period you already paid for, and we don&apos;t offer refunds for partial
+              periods. If a payment fails, we may pause access to unlimited analyses until it&apos;s
+              resolved. This section is a plain-language draft and, like the rest of this page, should get a
+              real legal review before FirstTouch scales beyond early access — payments raise the stakes
+              beyond what these terms originally covered.
             </p>
           </section>
 

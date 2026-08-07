@@ -50,6 +50,33 @@ export interface Player {
   createdAt: string
 }
 
+export type SubscriptionStatus =
+  | 'none'
+  | 'active'
+  | 'trialing'
+  | 'past_due'
+  | 'canceled'
+  | 'unpaid'
+  | 'incomplete'
+  | 'incomplete_expired'
+  | 'paused'
+
+// Statuses that unlock unlimited analyses. past_due gets a grace period since
+// Stripe is already auto-retrying the card.
+export const ENTITLED_SUBSCRIPTION_STATUSES: SubscriptionStatus[] = ['active', 'trialing', 'past_due']
+
+export function isEntitledStatus(status: SubscriptionStatus): boolean {
+  return ENTITLED_SUBSCRIPTION_STATUSES.includes(status)
+}
+
+export interface BillingStatus {
+  subscriptionStatus: SubscriptionStatus
+  isEntitled: boolean
+  freeAnalysesUsed: number
+  freeAnalysesLimit: number
+  currentPeriodEnd: string | null
+}
+
 export type ClipStatus = 'uploaded' | 'analyzing' | 'analyzed' | 'sent_to_coach'
 
 export type SkillTag =
