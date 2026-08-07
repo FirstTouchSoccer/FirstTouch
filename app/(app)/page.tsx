@@ -12,15 +12,17 @@ export default function Page() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background">
-      <main className="flex-1 pb-24">
-        {activeTab === 'home' && <HomeTab />}
-        {activeTab === 'vault' && <VaultTab />}
-        {activeTab === 'upload' && <AiLabTab />}
-        {activeTab === 'train' && <CoachesTab />}
-        {activeTab === 'profile' && <ProfileTab />}
-      </main>
+    <div className="flex min-h-dvh flex-col bg-background md:flex-row">
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+      <main className="flex-1 pb-24 md:pb-0 md:pl-20 lg:pl-64">
+        <div className="mx-auto w-full max-w-md md:max-w-3xl lg:max-w-5xl">
+          {activeTab === 'home' && <HomeTab />}
+          {activeTab === 'vault' && <VaultTab />}
+          {activeTab === 'upload' && <AiLabTab />}
+          {activeTab === 'train' && <CoachesTab />}
+          {activeTab === 'profile' && <ProfileTab />}
+        </div>
+      </main>
     </div>
   )
 }

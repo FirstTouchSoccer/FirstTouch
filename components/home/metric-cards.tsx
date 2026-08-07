@@ -69,7 +69,7 @@ export function MetricCards() {
 
   return (
     <section className="px-5 pt-6" aria-label="Key metrics">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {metrics.map((m) => {
           const Icon = m.icon
           return (

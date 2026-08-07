@@ -132,6 +132,8 @@ export function CoachesTab() {
           </div>
         )}
 
+        {filtered.length > 0 && (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((coach) => (
           <div
             key={coach.id}
@@ -207,6 +209,8 @@ export function CoachesTab() {
             </button>
           </div>
         ))}
+        </div>
+        )}
       </div>
     </div>
   )

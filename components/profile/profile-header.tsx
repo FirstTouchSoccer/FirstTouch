@@ -1,21 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { BadgeCheck, MapPin, LogOut, Film, MessageSquareText, Trophy, Flame } from 'lucide-react'
+import { BadgeCheck, Camera, Loader2, MapPin, LogOut, Film, MessageSquareText, Trophy, Flame } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { PlayerAvatar } from '@/components/player-avatar'
 import { usePlayers } from '@/lib/players-context'
-import { listBookings, listClips, listCoachNotes, signOut } from '@/lib/store'
+import { listBookings, listClips, listCoachNotes, signOut, updatePlayer } from '@/lib/store'
+import { fileToAvatarDataUrl } from '@/lib/image-resize'
 import { computeOvr, computeStreak } from '@/lib/rating'
 import type { Clip, CoachNote, SessionBooking } from '@/lib/types'
 
 export function ProfileHeader() {
   const router = useRouter()
-  const { activePlayer: profile } = usePlayers()
+  const { activePlayer: profile, refreshPlayers } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [bookings, setBookings] = useState<SessionBooking[]>([])
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!profile) return
@@ -33,6 +37,23 @@ export function ProfileHeader() {
   async function handleSignOut() {
     await signOut()
     router.push('/login')
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !profile) return
+    setAvatarError(null)
+    setAvatarUploading(true)
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file)
+      await updatePlayer(profile.id, { avatarUrl: dataUrl })
+      await refreshPlayers()
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Could not update photo.')
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
   const stats = [
@@ -62,8 +83,31 @@ export function ProfileHeader() {
       {/* Player card */}
       <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-card transition-colors duration-200">
         <div className="flex items-center gap-4 p-5">
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl ring-2 ring-border">
-            <PlayerAvatar name={profile.name} avatarUrl={profile.avatarUrl} sizePx={80} />
+          <div className="relative shrink-0">
+            <div className="relative h-20 w-20 overflow-hidden rounded-2xl ring-2 ring-border">
+              <PlayerAvatar name={profile.name} avatarUrl={profile.avatarUrl} sizePx={80} />
+              {avatarUploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-charcoal/50">
+                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              aria-label="Change player photo"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={avatarUploading}
+              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-primary text-primary-foreground disabled:opacity-60"
+            >
+              <Camera className="h-3.5 w-3.5" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
@@ -94,6 +138,7 @@ export function ProfileHeader() {
           </div>
         </div>
       </div>
+      {avatarError && <p className="mt-1.5 text-xs font-medium text-destructive">{avatarError}</p>}
 
       {/* activity stat chips */}
       <div className="mt-3 grid grid-cols-4 gap-2">

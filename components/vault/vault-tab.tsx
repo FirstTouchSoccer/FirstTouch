@@ -210,7 +210,7 @@ export function VaultTab() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((v) => (
               <button
                 key={v.id}
@@ -224,7 +224,7 @@ export function VaultTab() {
                     alt={v.title}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 448px) 100vw, 448px"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
                   <span className="absolute inset-0 m-auto flex h-11 w-11 items-center justify-center rounded-full bg-card/90">
