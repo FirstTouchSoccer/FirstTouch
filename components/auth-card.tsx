@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 import {
   isDemoMode,
   resendVerificationEmail,
@@ -25,6 +26,33 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   const [busy, setBusy] = useState(false)
   const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [resent, setResent] = useState(false)
+
+  // While this tab is showing "Check your email," the actual confirmation
+  // usually happens in a different tab (the email link opens its own tab).
+  // Supabase's client syncs auth state across same-origin tabs via a
+  // `storage` event, so onAuthStateChange fires here the moment that other
+  // tab confirms — no manual refresh needed. Polling is a fallback in case
+  // that cross-tab sync doesn't fire in some browser (e.g. strict private-
+  // browsing storage partitioning).
+  useEffect(() => {
+    if (!pendingEmail || !supabase) return
+    let cancelled = false
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session && !cancelled) router.push('/')
+    })
+
+    const poll = setInterval(async () => {
+      const { data } = await supabase!.auth.getSession()
+      if (data.session && !cancelled) router.push('/')
+    }, 3000)
+
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+      clearInterval(poll)
+    }
+  }, [pendingEmail, router])
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -84,7 +112,8 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
         <h1 className="text-lg font-bold">Check your email</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           We sent a confirmation link to <span className="font-medium text-foreground">{pendingEmail}</span>.
-          Click it to finish signing up.
+          Click it to finish signing up — this page will continue automatically once you do, no need to come
+          back and refresh.
         </p>
         <button
           type="button"
