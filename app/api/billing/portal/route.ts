@@ -20,17 +20,22 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const row = await getOrCreateBillingRow(data.user.id)
-  if (!row.stripe_customer_id) {
-    return Response.json({ error: 'No subscription to manage yet' }, { status: 400 })
+  try {
+    const row = await getOrCreateBillingRow(data.user.id)
+    if (!row.stripe_customer_id) {
+      return Response.json({ error: 'No subscription to manage yet' }, { status: 400 })
+    }
+
+    const origin = req.headers.get('origin') ?? new URL(req.url).origin
+    const stripe = getStripe()
+    const session = await stripe.billingPortal.sessions.create({
+      customer: row.stripe_customer_id,
+      return_url: origin,
+    })
+
+    return Response.json({ url: session.url })
+  } catch (err) {
+    console.error('Billing portal session creation failed:', err)
+    return Response.json({ error: 'portal_failed' }, { status: 500 })
   }
-
-  const origin = req.headers.get('origin') ?? new URL(req.url).origin
-  const stripe = getStripe()
-  const session = await stripe.billingPortal.sessions.create({
-    customer: row.stripe_customer_id,
-    return_url: origin,
-  })
-
-  return Response.json({ url: session.url })
 }
