@@ -2,12 +2,17 @@
  * Server-side mock feedback generator — used when ANTHROPIC_API_KEY is not set
  * (or the API call fails), so the end-to-end flow always completes. Output is
  * derived from the actual pose metrics so it still feels personalized, and is
- * clearly labelled `source: "mock"` in the UI.
+ * clearly labelled `source: "mock"` in the UI. The training plan draws from
+ * the same curated drill bank the real Claude path uses, so a fallback (e.g.
+ * during an Anthropic outage) is still stage-appropriate and grounded rather
+ * than a fixed, unrelated plan.
  */
+import { movementReads } from '@/lib/read'
+import { drillsFor, type DrillCategory } from '@/lib/coaching-reference'
 import type { Feedback, Player, PoseMetrics, Scores } from '@/lib/types'
 
 export function buildMockFeedback(
-  profile: Pick<Player, 'name' | 'position'>,
+  profile: Pick<Player, 'name' | 'position' | 'experience'>,
   metrics: PoseMetrics
 ): Feedback {
   const scores: Scores = {
@@ -57,69 +62,39 @@ export function buildMockFeedback(
     strengths,
     improvements,
     scores,
-    trainingPlan: [
-      {
-        day: 'Week 1 · Mon',
-        focus: 'Balance & base position',
-        drills: [
-          {
-            name: 'Single-leg ball taps',
-            description: 'Stand on one leg, tap the ball with the other foot. 3×45s each side.',
-            duration: '10 min',
-          },
-          {
-            name: 'Low-gate dribbling',
-            description: 'Dribble through 1m gates staying in a low athletic stance the whole run.',
-            duration: '15 min',
-          },
-        ],
-      },
-      {
-        day: 'Week 1 · Thu',
-        focus: 'Leg symmetry',
-        drills: [
-          {
-            name: 'Weak-foot wall passes',
-            description: '100 passes off a wall, weak foot only, two-touch.',
-            duration: '15 min',
-          },
-          {
-            name: 'Split-squat holds',
-            description: '3×30s per leg, knee tracking over the toes.',
-            duration: '8 min',
-          },
-        ],
-      },
-      {
-        day: 'Week 2 · Mon',
-        focus: 'Match-speed movement',
-        drills: [
-          {
-            name: '5-10-5 shuttles with ball',
-            description: '6 reps at full speed; decelerate under control.',
-            duration: '12 min',
-          },
-          {
-            name: '1v1 shadow play',
-            description: "Mirror a partner's cuts in 30s bursts, 6 rounds.",
-            duration: '12 min',
-          },
-        ],
-      },
-      {
-        day: 'Week 2 · Thu',
-        focus: 'Putting it together',
-        drills: [
-          {
-            name: 'Circuit repeat + re-film',
-            description: 'Repeat the same drill from this clip and film it — upload to compare scores.',
-            duration: '20 min',
-          },
-        ],
-      },
-    ],
+    trainingPlan: buildTrainingPlan(profile.experience, metrics),
     createdAt: new Date().toISOString(),
   }
+}
+
+const DAY_LABELS = ['Week 1 · Mon', 'Week 1 · Thu', 'Week 2 · Mon', 'Week 2 · Thu']
+
+function buildTrainingPlan(experience: Player['experience'], metrics: PoseMetrics) {
+  const reads = movementReads(metrics)
+  const weak = reads.filter((r) => r.band === 'Developing')
+  const targets = (weak.length > 0 ? weak : reads.filter((r) => r.band === 'Solid')).slice(0, 3)
+
+  const days = targets.map((read, i) => ({
+    day: DAY_LABELS[i] ?? DAY_LABELS[DAY_LABELS.length - 1],
+    focus: read.label,
+    drills: drillsFor(read.key as DrillCategory, experience)
+      .slice(0, 2)
+      .map((d) => ({ name: d.name, description: d.description, duration: d.duration })),
+  }))
+
+  days.push({
+    day: DAY_LABELS[DAY_LABELS.length - 1],
+    focus: 'Putting it together',
+    drills: [
+      {
+        name: 'Circuit repeat + re-film',
+        description: 'Repeat the same drill from this clip and film it — upload to compare scores.',
+        duration: '20 min',
+      },
+    ],
+  })
+
+  return days
 }
 
 function blend(a: number, b: number): number {

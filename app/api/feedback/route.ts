@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { movementReads } from '@/lib/read'
+import { buildReferenceContext } from '@/lib/coaching-reference'
 import { isTrustedOrigin } from '@/lib/verify-origin'
 import { supabase, supabaseConfigured } from '@/lib/supabase'
 import { checkAndConsumeUsage } from '@/lib/billing-server'
@@ -72,13 +73,14 @@ const FEEDBACK_SCHEMA = {
 } as const
 
 const SYSTEM_PROMPT = `You are an elite youth soccer development coach writing for the FirstTouch app.
-You receive a *general* movement read of a young player practicing — bucketed signals estimated from a single ordinary phone camera (via pose estimation) — plus the player's profile.
+You receive a *general* movement read of a young player practicing — bucketed signals estimated from a single ordinary phone camera (via pose estimation) — plus the player's profile, plus a curated reference block with stage-appropriate coaching guidance and a vetted drill bank for this player's weak areas.
 These signals are approximate and low-resolution. Speak about overall movement patterns and tendencies, NOT exact joint angles or percentages, and never imply lab-grade precision.
 Write encouraging but honest, specific feedback a club-soccer parent would find worth paying for:
 - Base your read on the general signals and the player's profile; describe what the movement suggests as things to work on, not as precise measurements.
-- Match drill difficulty to the player's age and self-rated attributes; drills must be doable alone or with one partner, minimal equipment.
+- Build the training plan primarily from the reference drill bank provided — adapt the wording naturally, but don't invent unrelated drills when the bank already covers the weak area. If a finding isn't covered by the bank, it's fine to add a sensible drill, but keep it consistent with the stage guidance.
+- Match drill difficulty to the player's age, experience stage, and self-rated attributes; drills must be doable alone or with one partner, minimal equipment.
 - Scores are 0-100 where 50 is typical, 70+ is strong, 85+ is exceptional.
-- Keep language positive and parent-friendly; never shame the player. This is developmental guidance, not medical or injury advice.`
+- Keep language positive and parent-friendly; never shame the player or compare them to other players by name. This is developmental guidance, not medical or injury advice.`
 
 export async function POST(req: Request) {
   if (!isTrustedOrigin(req)) {
@@ -128,6 +130,7 @@ export async function POST(req: Request) {
   }
 
   const reads = movementReads(metrics)
+  const referenceContext = buildReferenceContext(profile.experience, reads)
   const anthropic = new Anthropic()
   try {
     const response = await anthropic.messages.create({
@@ -146,6 +149,9 @@ export async function POST(req: Request) {
             '',
             `General movement read (approximate, single-camera estimate over ~${metrics.durationSec}s; source: ${metrics.source === 'mediapipe' ? 'in-browser pose estimation' : 'simulated demo data'}):`,
             ...reads.map((r) => `- ${r.label}: ${r.band} — ${r.blurb}`),
+            '',
+            'Curated coaching reference (ground the training plan in this):',
+            referenceContext,
             '',
             'Produce the structured feedback and training plan. Do not cite exact angles or percentages.',
           ]
