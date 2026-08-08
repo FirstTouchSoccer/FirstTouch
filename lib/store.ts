@@ -458,16 +458,22 @@ export async function createClip(playerId: string, title: string, file: File, sk
   if (supabase) {
     const path = `${session.userId}/${playerId}/${id}-${file.name}`
     const token = await authToken()
+    // Some mobile browsers/pickers hand back an empty file.type for certain
+    // video files. The presigned PUT's signature covers the Content-Type
+    // header, so the value used to request the URL and the value actually
+    // sent on the PUT must match exactly, or R2 rejects it — resolve once
+    // and reuse, rather than risking a silent mismatch between the two.
+    const contentType = file.type || 'application/octet-stream'
     const urlRes = await fetch('/api/storage/upload-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ key: path, contentType: file.type }),
+      body: JSON.stringify({ key: path, contentType }),
     })
     if (!urlRes.ok) throw new Error('Could not start the upload — try again.')
     const { url: uploadUrl } = await urlRes.json()
     const putRes = await fetch(uploadUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': file.type },
+      headers: { 'Content-Type': contentType },
       body: file,
     })
     if (!putRes.ok) throw new Error('Video upload failed — try again.')

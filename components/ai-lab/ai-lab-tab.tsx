@@ -30,6 +30,7 @@ type Mode = 'skill' | 'match'
 type Phase = 'idle' | 'processing' | 'result'
 
 const MAX_SKILL_CLIP_SECONDS = 60
+const MAX_MATCH_BYTES = 2 * 1024 * 1024 * 1024
 
 const recordingTips = [
   { icon: Smartphone, text: 'Landscape orientation, camera steady or braced' },
@@ -121,6 +122,31 @@ export function AiLabTab() {
     } catch {
       setFile(null)
       setFileError("Couldn't read that file — try a different video.")
+    }
+  }
+
+  async function pickMatchFile(picked: File | null) {
+    setFileError(null)
+    if (!picked) {
+      setFile(null)
+      return
+    }
+    if (picked.size > MAX_MATCH_BYTES) {
+      setFile(null)
+      setFileError(
+        `That file is ${(picked.size / (1024 * 1024 * 1024)).toFixed(1)}GB — FirstTouch accepts up to 2GB per upload.`,
+      )
+      return
+    }
+    try {
+      // Not enforcing a duration cap here (full sessions are meant to be
+      // long) — this just confirms it's a real, decodable video, since
+      // drag-and-drop bypasses the file picker's "video/*" filter.
+      await getVideoDuration(picked)
+      setFile(picked)
+    } catch {
+      setFile(null)
+      setFileError("Couldn't read that file — make sure it's a video, then try again.")
     }
   }
 
@@ -377,11 +403,14 @@ export function AiLabTab() {
               sub="Full match or long session · up to 2GB"
               dragging={dragging}
               setDragging={setDragging}
-              onPick={setFile}
+              onPick={pickMatchFile}
               fileRef={fileRef}
               fileName={file?.name ?? null}
               large
             />
+            {fileError && (
+              <p className="mt-2 text-xs font-medium text-rose">{fileError}</p>
+            )}
             {uploadError && (
               <p className="mt-2 text-xs font-medium text-rose">{uploadError}</p>
             )}
