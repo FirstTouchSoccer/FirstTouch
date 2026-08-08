@@ -458,16 +458,19 @@ export async function createClip(playerId: string, title: string, file: File, sk
   if (supabase) {
     const path = `${session.userId}/${playerId}/${id}-${file.name}`
     const token = await authToken()
-    const { url: uploadUrl } = await fetch('/api/storage/upload-url', {
+    const urlRes = await fetch('/api/storage/upload-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ key: path, contentType: file.type }),
-    }).then((r) => r.json())
-    await fetch(uploadUrl, {
+    })
+    if (!urlRes.ok) throw new Error('Could not start the upload — try again.')
+    const { url: uploadUrl } = await urlRes.json()
+    const putRes = await fetch(uploadUrl, {
       method: 'PUT',
       headers: { 'Content-Type': file.type },
       body: file,
     })
+    if (!putRes.ok) throw new Error('Video upload failed — try again.')
     await supabase.from('clips').insert({
       id,
       player_id: playerId,

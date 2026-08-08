@@ -21,6 +21,7 @@ import { UploadResult } from '@/components/ai-lab/upload-result'
 import { AnalysisResult } from '@/components/ai-lab/analysis-result'
 import { authToken, createClip, startCheckout, updateClip } from '@/lib/store'
 import { analyzeVideo } from '@/lib/pose'
+import { getVideoDuration } from '@/lib/video-duration'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { usePlayers } from '@/lib/players-context'
 import type { Clip, Feedback, SkillTag } from '@/lib/types'
@@ -29,34 +30,6 @@ type Mode = 'skill' | 'match'
 type Phase = 'idle' | 'processing' | 'result'
 
 const MAX_SKILL_CLIP_SECONDS = 60
-
-function getVideoDuration(file: File): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const video = document.createElement('video')
-    video.preload = 'metadata'
-    const url = URL.createObjectURL(file)
-    video.onloadedmetadata = () => {
-      // Some containers (notably MediaRecorder-produced WebM) report
-      // Infinity here until the browser has actually scanned the file —
-      // force it by seeking to the end, then read the resolved duration.
-      if (!Number.isFinite(video.duration)) {
-        video.onseeked = () => {
-          URL.revokeObjectURL(url)
-          resolve(Number.isFinite(video.duration) ? video.duration : 0)
-        }
-        video.currentTime = 1e9
-        return
-      }
-      URL.revokeObjectURL(url)
-      resolve(video.duration)
-    }
-    video.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('Could not read this video file.'))
-    }
-    video.src = url
-  })
-}
 
 const recordingTips = [
   { icon: Smartphone, text: 'Landscape orientation, camera steady or braced' },
@@ -98,6 +71,7 @@ export function AiLabTab() {
   const [activeStep, setActiveStep] = useState(0)
   const [paywallNotice, setPaywallNotice] = useState(false)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const paywalled = !billing.isEntitled && billing.freeAnalysesUsed >= billing.freeAnalysesLimit
@@ -120,6 +94,7 @@ export function AiLabTab() {
     setSavedClip(null)
     setActiveStep(0)
     setPaywallNotice(false)
+    setUploadError(null)
   }
 
   function switchMode(m: Mode) {
@@ -153,58 +128,66 @@ export function AiLabTab() {
     if (!file || !profile) return
     setPhase('processing')
     setActiveStep(0)
-    const clip = await createClip(profile.id, title, file, skillTag)
-
-    if (skillTag === 'full-match') {
-      await updateClip(clip.id, { status: 'sent_to_coach' })
-      setSavedClip({ ...clip, status: 'sent_to_coach' })
-      setPhase('result')
-      return
-    }
-
-    // Single-Skill: run real pose analysis (in-browser) + AI coach feedback.
-    setActiveStep(1)
-    const metrics = await analyzeVideo(file)
-
-    setActiveStep(2)
-    let feedback: Feedback
+    setUploadError(null)
     try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await authToken()}` },
-        body: JSON.stringify({
-          profile: {
-            name: profile.name,
-            age: profile.age,
-            experience: profile.experience,
-            position: profile.position,
-            attributes: profile.attributes,
-          },
-          metrics,
-          clipTitle: title,
-        }),
-      })
-      if (res.status === 402) {
-        // Free pool was exhausted server-side between page load and this
-        // upload (stale client cache, or another device on the same
-        // account). The clip stays as-is (uploaded, no feedback) — nothing
-        // to undo, just surface the upgrade prompt instead of a result.
-        refreshBilling()
-        setPhase('idle')
-        setPaywallNotice(true)
+      const clip = await createClip(profile.id, title, file, skillTag)
+
+      if (skillTag === 'full-match') {
+        await updateClip(clip.id, { status: 'sent_to_coach' })
+        setSavedClip({ ...clip, status: 'sent_to_coach' })
+        setPhase('result')
         return
       }
-      const data = await res.json()
-      feedback = data.feedback
-    } catch {
-      feedback = buildMockFeedback(profile, metrics)
-    }
 
-    refreshBilling()
-    setActiveStep(3)
-    await updateClip(clip.id, { status: 'analyzed', metrics, feedback })
-    setSavedClip({ ...clip, status: 'analyzed', metrics, feedback })
-    setPhase('result')
+      // Single-Skill: run real pose analysis (in-browser) + AI coach feedback.
+      setActiveStep(1)
+      const metrics = await analyzeVideo(file)
+
+      setActiveStep(2)
+      let feedback: Feedback
+      try {
+        const res = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await authToken()}` },
+          body: JSON.stringify({
+            profile: {
+              name: profile.name,
+              age: profile.age,
+              experience: profile.experience,
+              position: profile.position,
+              attributes: profile.attributes,
+            },
+            metrics,
+            clipTitle: title,
+          }),
+        })
+        if (res.status === 402) {
+          // Free pool was exhausted server-side between page load and this
+          // upload (stale client cache, or another device on the same
+          // account). The clip stays as-is (uploaded, no feedback) — nothing
+          // to undo, just surface the upgrade prompt instead of a result.
+          refreshBilling()
+          setPhase('idle')
+          setPaywallNotice(true)
+          return
+        }
+        const data = await res.json()
+        feedback = data.feedback
+      } catch {
+        feedback = buildMockFeedback(profile, metrics)
+      }
+
+      refreshBilling()
+      setActiveStep(3)
+      await updateClip(clip.id, { status: 'analyzed', metrics, feedback })
+      setSavedClip({ ...clip, status: 'analyzed', metrics, feedback })
+      setPhase('result')
+    } catch (err) {
+      // Anything that throws here (upload, save) previously left the loader
+      // spinning forever with no feedback — surface it and let them retry.
+      setPhase('idle')
+      setUploadError(err instanceof Error ? err.message : 'Something went wrong with that upload — try again.')
+    }
   }
 
   return (
@@ -326,6 +309,11 @@ export function AiLabTab() {
                   )
                 })}
               </ul>
+              <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+                FirstTouch reads body movement from the video — it doesn&apos;t identify who&apos;s in it. Upload{' '}
+                {profile?.name ?? 'this player'}&apos;s own footage so the read and training plan are actually
+                calibrated to their age and experience level.
+              </p>
             </div>
 
             <Uploader
@@ -339,6 +327,9 @@ export function AiLabTab() {
             />
             {fileError && (
               <p className="mt-2 text-xs font-medium text-rose">{fileError}</p>
+            )}
+            {uploadError && (
+              <p className="mt-2 text-xs font-medium text-rose">{uploadError}</p>
             )}
 
             {paywallNotice && (
@@ -391,6 +382,9 @@ export function AiLabTab() {
               fileName={file?.name ?? null}
               large
             />
+            {uploadError && (
+              <p className="mt-2 text-xs font-medium text-rose">{uploadError}</p>
+            )}
 
             <div className="mt-3 rounded-2xl border border-border bg-card p-4">
               <p className="text-xs font-semibold text-muted-foreground">

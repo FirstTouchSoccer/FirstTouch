@@ -6,6 +6,7 @@
  * can't load or the video can't be decoded, we fall back to clearly-labelled
  * simulated metrics (`source: "simulated"`) so the end-to-end flow still demos.
  */
+import { resolveDuration } from '@/lib/video-duration'
 import type { PoseMetrics } from '@/lib/types'
 
 // MediaPipe pose landmark indices we use.
@@ -86,7 +87,12 @@ async function analyzeWithMediaPipe(
       video.onerror = () => reject(new Error('Could not decode video.'))
     })
 
-    const duration = Math.min(video.duration || 0, MAX_ANALYZE_SECONDS)
+    // video.duration can read as Infinity right after loadedmetadata for
+    // fragmented/streamed containers (common in re-encoded clip downloads)
+    // until a seek forces the browser to resolve it — same issue the file
+    // picker's duration check already works around.
+    const rawDuration = await resolveDuration(video)
+    const duration = Math.min(rawDuration || 0, MAX_ANALYZE_SECONDS)
     if (!duration) throw new Error('Video has no duration.')
 
     const step = 1 / SAMPLE_FPS
