@@ -40,11 +40,12 @@ function CallbackInner() {
         if (data.session) {
           if (cancelled) return
           // Show a clear success state for a beat before redirecting —
-          // jumping straight to '/' made a working confirmation look like a
-          // blank/broken page to real users, who reported it as "empty."
+          // jumping straight to the dashboard made a working confirmation
+          // look like a blank/broken page to real users, who reported it as
+          // "empty."
           setConfirmed(true)
           setTimeout(() => {
-            if (!cancelled) router.replace('/')
+            if (!cancelled) router.replace('/dashboard')
           }, 1400)
           return
         }

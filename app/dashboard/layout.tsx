@@ -126,9 +126,9 @@ function BillingRedirectWatcher({ refreshBilling }: { refreshBilling: () => Prom
   useEffect(() => {
     const billingParam = searchParams.get('billing')
     if (billingParam === 'success') {
-      refreshBilling().finally(() => router.replace('/'))
+      refreshBilling().finally(() => router.replace('/dashboard'))
     } else if (billingParam === 'cancelled') {
-      router.replace('/')
+      router.replace('/dashboard')
     }
   }, [searchParams, refreshBilling, router])
 

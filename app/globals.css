@@ -87,6 +87,14 @@
   --rose-foreground: #ffffff;
   --sand: #a8875a;
   --sand-foreground: #14151a;
+
+  /* Landing page's canvas soccer ball (components/landing/ball.ts). Kept a
+     near-constant black/white regardless of theme — like a photo of a real
+     ball, only the seam subtly tracks --border, so it stays recognizable in
+     both modes instead of inverting into an odd tint. */
+  --ball-pent: var(--charcoal);
+  --ball-hex: #fbfaf7;
+  --ball-edge: var(--border);
   --bronze: #8a5d08;
   --charcoal: #14151a;
 
