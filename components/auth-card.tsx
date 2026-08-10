@@ -39,12 +39,12 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
     let cancelled = false
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session && !cancelled) router.push('/dashboard')
+      if (session && !cancelled) router.push('/home')
     })
 
     const poll = setInterval(async () => {
       const { data } = await supabase!.auth.getSession()
-      if (data.session && !cancelled) router.push('/dashboard')
+      if (data.session && !cancelled) router.push('/home')
     }, 3000)
 
     return () => {
@@ -79,7 +79,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
       } else {
         await signIn(email, password)
       }
-      router.push('/dashboard')
+      router.push('/home')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
@@ -92,7 +92,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
     setError(null)
     try {
       await signInWithDemoAccount()
-      router.push('/dashboard')
+      router.push('/home')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start the demo account.')
     } finally {

@@ -57,8 +57,8 @@ export async function POST(req: Request) {
         ? [{ coupon: process.env.STRIPE_LAUNCH_COUPON_ID }]
         : undefined,
       subscription_data: { metadata: { supabase_user_id: userId } },
-      success_url: `${origin}/dashboard?billing=success`,
-      cancel_url: `${origin}/dashboard?billing=cancelled`,
+      success_url: `${origin}/home?billing=success`,
+      cancel_url: `${origin}/home?billing=cancelled`,
     })
 
     return Response.json({ url: session.url })

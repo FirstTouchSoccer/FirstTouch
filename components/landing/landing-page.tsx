@@ -22,12 +22,12 @@ export function LandingPage() {
 
   // A visitor who's already signed in (e.g. an installed PWA opening at "/",
   // or someone who just bookmarked the bare domain) shouldn't have to find
-  // their way back to the dashboard through marketing copy. Checked after
-  // the page has already started rendering rather than gating first paint.
+  // their way back to /home through marketing copy. Checked after the page
+  // has already started rendering rather than gating first paint.
   useEffect(() => {
     let cancelled = false
     getSession().then((session) => {
-      if (session && !cancelled) router.replace('/dashboard')
+      if (session && !cancelled) router.replace('/home')
     })
     return () => {
       cancelled = true
@@ -38,9 +38,9 @@ export function LandingPage() {
     <div className="ftp" ref={rootRef}>
       <header className="nav" id="ftp-nav">
         <div className="nav__in">
-          <Link className="mark" href="/">
+          <a className="mark" href="#top">
             <Logo size="sm" />
-          </Link>
+          </a>
           <div className="nav__actions">
             <ThemeToggle />
             <Link className="navLink" href="/login">Log in</Link>
