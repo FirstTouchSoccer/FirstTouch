@@ -6,9 +6,11 @@ import { createPlayer } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
 import { emptyPlayerFields, PlayerFieldsForm, type PlayerFieldsValues } from '@/components/player-fields-form'
 import { ConsentCheckbox } from '@/components/consent-checkbox'
+import { useTranslation } from '@/lib/i18n/context'
 
 export function AddPlayerSheet({ onClose }: { onClose: () => void }) {
   const { refreshPlayers, setActivePlayerId } = usePlayers()
+  const { t } = useTranslation()
   const [values, setValues] = useState<PlayerFieldsValues>(emptyPlayerFields)
   const [consented, setConsented] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -30,7 +32,7 @@ export function AddPlayerSheet({ onClose }: { onClose: () => void }) {
       setActivePlayerId(player.id)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(err instanceof Error ? err.message : t.common.somethingWentWrong)
     } finally {
       setBusy(false)
     }
@@ -46,17 +48,17 @@ export function AddPlayerSheet({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold leading-none tracking-tight">Add a player</h2>
+          <h2 className="text-lg font-bold leading-none tracking-tight">{t.addPlayer.title}</h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t.addPlayer.close}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mt-1.5 text-xs text-muted-foreground">Add another child to your account.</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{t.addPlayer.subtitle}</p>
 
         <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
           <PlayerFieldsForm values={values} onChange={setValues} />
@@ -69,7 +71,7 @@ export function AddPlayerSheet({ onClose }: { onClose: () => void }) {
             disabled={busy || !consented}
             className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-60"
           >
-            Add player
+            {t.addPlayer.addButton}
           </button>
         </form>
       </div>

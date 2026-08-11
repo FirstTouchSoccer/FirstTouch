@@ -14,13 +14,18 @@ import { cn } from '@/lib/utils'
 import { getClip, listCoachNotes } from '@/lib/store'
 import { coachById } from '@/lib/coaches'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
+import type { Dictionary } from '@/lib/i18n/types'
 import type { Clip, CoachNote } from '@/lib/types'
 
-const typeMeta = {
-  note: { icon: MessageSquare, label: 'Frame note', color: 'text-primary' },
-  voice: { icon: Mic, label: 'Voice memo', color: 'text-bronze' },
-  video: { icon: VideoIcon, label: 'Video response', color: 'text-rose' },
-} as const
+const typeMetaKey: Record<
+  CoachNote['type'],
+  { labelKey: keyof Pick<Dictionary['feedbackHub'], 'frameNote' | 'voiceMemo' | 'videoResponse'>; icon: typeof MessageSquare; color: string }
+> = {
+  note: { labelKey: 'frameNote', icon: MessageSquare, color: 'text-primary' },
+  voice: { labelKey: 'voiceMemo', icon: Mic, color: 'text-bronze' },
+  video: { labelKey: 'videoResponse', icon: VideoIcon, color: 'text-rose' },
+}
 
 export function FeedbackHub({
   clipId,
@@ -30,6 +35,7 @@ export function FeedbackHub({
   onBack: () => void
 }) {
   const { activePlayer } = usePlayers()
+  const { t } = useTranslation()
   const [clip, setClip] = useState<Clip | null>(null)
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [activeNote, setActiveNote] = useState<CoachNote | null>(null)
@@ -50,19 +56,19 @@ export function FeedbackHub({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back to coaches"
+          aria-label={t.feedbackHub.backToCoaches}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <p className="mt-6 text-sm text-muted-foreground">
-          No coach feedback on this clip yet.
+          {t.feedbackHub.noFeedbackYet}
         </p>
       </div>
     )
   }
 
-  const coachName = coachById(activeNote.coachId)?.name ?? 'Your coach'
+  const coachName = coachById(activeNote.coachId)?.name ?? t.feedbackHub.yourCoach
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -70,15 +76,15 @@ export function FeedbackHub({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back to coaches"
+          aria-label={t.feedbackHub.backToCoaches}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div>
-          <h1 className="text-lg font-bold tracking-tight">Feedback Session</h1>
+          <h1 className="text-lg font-bold tracking-tight">{t.feedbackHub.title}</h1>
           <p className="text-xs text-muted-foreground">
-            {coachName} · {clip.title} review
+            {coachName} · {clip.title} {t.feedbackHub.review}
           </p>
         </div>
       </header>
@@ -103,7 +109,7 @@ export function FeedbackHub({
             <button
               type="button"
               onClick={() => setPlaying((p) => !p)}
-              aria-label={playing ? 'Pause' : 'Play'}
+              aria-label={playing ? t.feedbackHub.pause : t.feedbackHub.play}
               className="flex h-14 w-14 items-center justify-center rounded-full bg-card/90 text-foreground"
             >
               {playing ? (
@@ -123,14 +129,14 @@ export function FeedbackHub({
             style={{ width: `${activeNote.frame}%` }}
           />
           {notes.map((n) => {
-            const Icon = typeMeta[n.type].icon
+            const Icon = typeMetaKey[n.type].icon
             const isActive = n.id === activeNote.id
             return (
               <button
                 key={n.id}
                 type="button"
                 onClick={() => setActiveNote(n)}
-                aria-label={`Feedback at frame ${n.frame}`}
+                aria-label={t.feedbackHub.feedbackAtFrame(n.frame)}
                 className={cn(
                   'absolute top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 transition-all',
                   isActive
@@ -148,14 +154,14 @@ export function FeedbackHub({
 
       {/* Notes feed */}
       <div className="mt-6 px-5">
-        <h2 className="text-sm font-bold tracking-tight">Coach notes</h2>
+        <h2 className="text-sm font-bold tracking-tight">{t.feedbackHub.coachNotes}</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Tap a marker or note to jump to that point
+          {t.feedbackHub.tapMarker}
         </p>
 
         <ul className="mt-3 flex flex-col gap-2.5">
           {notes.map((n) => {
-            const meta = typeMeta[n.type]
+            const meta = typeMetaKey[n.type]
             const Icon = meta.icon
             const isActive = n.id === activeNote.id
             return (
@@ -181,7 +187,7 @@ export function FeedbackHub({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-medium text-muted-foreground">
-                        {meta.label}
+                        {t.feedbackHub[meta.labelKey]}
                       </span>
                       {n.durationSec != null && (
                         <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">

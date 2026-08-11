@@ -7,6 +7,7 @@ import { VaultTab } from '@/components/vault/vault-tab'
 import { AiLabTab } from '@/components/ai-lab/ai-lab-tab'
 import { CoachesTab } from '@/components/coaches/coaches-tab'
 import { ProfileTab } from '@/components/profile/profile-tab'
+import { WelcomeTour } from '@/components/onboarding/welcome-tour'
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
@@ -23,6 +24,7 @@ export default function Page() {
           {activeTab === 'profile' && <ProfileTab />}
         </div>
       </main>
+      <WelcomeTour onAddPhoto={() => setActiveTab('profile')} />
     </div>
   )
 }

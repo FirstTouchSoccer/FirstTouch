@@ -7,6 +7,7 @@ import { PlayersContext } from '@/lib/players-context'
 import { emptyPlayerFields, PlayerFieldsForm, type PlayerFieldsValues } from '@/components/player-fields-form'
 import { ConsentCheckbox } from '@/components/consent-checkbox'
 import { Logo } from '@/components/logo'
+import { useTranslation } from '@/lib/i18n/context'
 import type { BillingStatus, Player } from '@/lib/types'
 
 const DEFAULT_BILLING: BillingStatus = {
@@ -23,6 +24,7 @@ function activePlayerStorageKey(userId: string): string {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [userId, setUserId] = useState<string | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [activePlayerId, setActivePlayerIdState] = useState<string | null>(null)
@@ -75,7 +77,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!ready) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t.appShell.loading}</p>
       </div>
     )
   }
@@ -103,7 +105,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Suspense>
       {isDemoMode && (
         <div className="bg-secondary px-4 py-2 text-center text-[11px] font-medium text-muted-foreground">
-          Demo mode — data lives in this browser, not a server.
+          {t.appShell.demoModeBar}
         </div>
       )}
       {children}
@@ -136,6 +138,7 @@ function BillingRedirectWatcher({ refreshBilling }: { refreshBilling: () => Prom
 }
 
 function RecoverPlayerScreen({ onCreated }: { onCreated: (player: Player) => void }) {
+  const { t } = useTranslation()
   const [values, setValues] = useState<PlayerFieldsValues>(emptyPlayerFields)
   const [consented, setConsented] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -155,7 +158,7 @@ function RecoverPlayerScreen({ onCreated }: { onCreated: (player: Player) => voi
       })
       onCreated(player)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(err instanceof Error ? err.message : t.common.somethingWentWrong)
     } finally {
       setBusy(false)
     }
@@ -165,9 +168,9 @@ function RecoverPlayerScreen({ onCreated }: { onCreated: (player: Player) => voi
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-background p-6">
       <Logo size="lg" />
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6">
-        <h1 className="text-lg font-bold leading-none tracking-tight">Add your player</h1>
+        <h1 className="text-lg font-bold leading-none tracking-tight">{t.addPlayer.recoverTitle}</h1>
         <p className="mt-1.5 text-xs text-muted-foreground">
-          Your account doesn&apos;t have a player set up yet — add one to continue.
+          {t.addPlayer.recoverSubtitle}
         </p>
         <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
           <PlayerFieldsForm values={values} onChange={setValues} />
@@ -178,7 +181,7 @@ function RecoverPlayerScreen({ onCreated }: { onCreated: (player: Player) => voi
             disabled={busy || !consented}
             className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-60"
           >
-            Continue
+            {t.common.continueBtn}
           </button>
         </form>
       </div>

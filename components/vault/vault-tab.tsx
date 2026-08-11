@@ -14,10 +14,12 @@ import {
 import { VideoPlayer, type PlayerTarget } from '@/components/vault/video-player'
 import { listClips, resolveVideoUrl } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
 import type { Clip } from '@/lib/types'
 
 export function VaultTab() {
   const { activePlayer } = usePlayers()
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState<Category | 'All'>('All')
   const [selected, setSelected] = useState<PlayerTarget | null>(null)
@@ -62,9 +64,9 @@ export function VaultTab() {
     <div className="animate-in fade-in duration-500">
       {/* Header */}
       <header className="px-5 pt-8">
-        <h1 className="text-lg font-bold tracking-tight">Video Vault</h1>
+        <h1 className="text-lg font-bold tracking-tight">{t.vault.title}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          Smart library with AI-tagged clips
+          {t.vault.subtitle}
         </p>
 
         {/* Search */}
@@ -73,7 +75,7 @@ export function VaultTab() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search drills, tactics, #tags"
+            placeholder={t.vault.searchPlaceholder}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -83,7 +85,7 @@ export function VaultTab() {
       {myClips.length > 0 && (
         <section className="px-5 pt-6" aria-label="Your uploads">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Your uploads</h2>
+            <h2 className="text-sm font-semibold">{t.vault.yourUploads}</h2>
             <span className="text-xs text-muted-foreground">{myClips.length}</span>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -112,7 +114,7 @@ export function VaultTab() {
                 <div className="p-2">
                   <p className="truncate text-[11px] font-semibold">{clip.title}</p>
                   <p className="truncate text-[10px] text-muted-foreground">
-                    {clip.status === 'sent_to_coach' ? 'Sent to coach' : 'Uploaded'}
+                    {clip.status === 'sent_to_coach' ? t.vault.sentToCoach : t.vault.uploaded}
                   </p>
                 </div>
               </button>
@@ -147,14 +149,14 @@ export function VaultTab() {
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-                AI Recommended Playlist
+                {t.vault.aiPlaylist}
               </span>
             </div>
             <p className="mt-2 text-sm font-semibold leading-snug text-pretty">
               {recommended.reason}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              3 clips picked to fix this weakness
+              {t.vault.clipsPicked(recVideos.length)}
             </p>
 
             <div className="mt-3 flex flex-col gap-2">
@@ -195,18 +197,18 @@ export function VaultTab() {
       <section className="px-5 pb-4 pt-6" aria-label="Video library">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold">
-            {active === 'All' ? 'All videos' : active}
+            {active === 'All' ? t.vault.allVideos : active}
           </h2>
           <span className="text-xs text-muted-foreground">
-            {filtered.length} clips
+            {filtered.length} {t.vault.clips}
           </span>
         </div>
 
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card py-12 text-center">
-            <p className="text-sm font-medium">No clips found</p>
+            <p className="text-sm font-medium">{t.vault.noClipsFound}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Try a different search or category.
+              {t.vault.tryDifferentSearch}
             </p>
           </div>
         ) : (
@@ -242,7 +244,7 @@ export function VaultTab() {
                     {v.title}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {v.views} views
+                    {v.views} {t.vault.views}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {v.tags.map((t) => (

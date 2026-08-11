@@ -3,10 +3,22 @@ import { buildMockChatReply, MAX_CHAT_TURNS } from '@/lib/mock-chat'
 import { movementReads } from '@/lib/read'
 import { isTrustedOrigin } from '@/lib/verify-origin'
 import { supabase, supabaseConfigured } from '@/lib/supabase'
-import { getOrCreateBillingRow } from '@/lib/billing-server'
+import { getOrCreateBillingRow, checkAndConsumeChatUsage } from '@/lib/billing-server'
 import { isEntitledStatus, experienceLabel, type ChatMessage, type Feedback, type Player, type PoseMetrics, type SubscriptionStatus } from '@/lib/types'
+import type { Language } from '@/lib/i18n/types'
+
+// Belt-and-suspenders bounds on client-supplied fields that flow straight
+// into the prompt. `history` in particular drives the per-clip MAX_CHAT_TURNS
+// cap client-side by array length — a forged request could otherwise send
+// an oversized or fabricated history to inflate a single call's cost. These
+// caps keep any one call's worst-case token count (and therefore cost)
+// bounded regardless of what's sent, on top of the monthly counters below.
+const MAX_HISTORY_MESSAGES = MAX_CHAT_TURNS * 2 // user+assistant pairs
+const MAX_MESSAGE_CHARS = 2000
 
 export const maxDuration = 60
+
+const LANGUAGE_NAMES: Record<Language, string> = { en: 'English', ru: 'Russian' }
 
 const SYSTEM_PROMPT = `You are the same elite youth soccer development coach who wrote the FirstTouch
 analysis below, now answering the player/parent's follow-up questions about it in a short chat.
@@ -21,6 +33,32 @@ outside soccer coaching), gently redirect to booking time with a human coach ins
 export async function POST(req: Request) {
   if (!isTrustedOrigin(req)) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { profile, metrics, feedback, clipTitle, history, question, language: rawLanguage } = (await req.json()) as {
+    profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
+    metrics: PoseMetrics
+    feedback: Feedback
+    clipTitle: string
+    history: ChatMessage[]
+    question: string
+    language?: Language
+  }
+  const language: Language = rawLanguage === 'ru' ? 'ru' : 'en'
+
+  if (!profile || !metrics || !feedback || !question?.trim()) {
+    return Response.json({ error: 'profile, metrics, feedback, and question are required' }, { status: 400 })
+  }
+
+  // Bound request size regardless of what MAX_CHAT_TURNS or the monthly
+  // counters enforce elsewhere — a single oversized or fabricated request
+  // shouldn't be able to blow past the per-call cost this route is sized
+  // for. history/question length is otherwise entirely client-controlled.
+  if ((history?.length ?? 0) > MAX_HISTORY_MESSAGES || question.length > MAX_MESSAGE_CHARS) {
+    return Response.json({ error: 'request_too_large' }, { status: 400 })
+  }
+  if (history?.some((m) => (m.content?.length ?? 0) > MAX_MESSAGE_CHARS)) {
+    return Response.json({ error: 'request_too_large' }, { status: 400 })
   }
 
   // Same real-auth requirement as /api/feedback — this route was missed when
@@ -46,23 +84,26 @@ export async function POST(req: Request) {
       if (!entitled && row.free_analyses_used < 1) {
         return Response.json({ error: 'no_analysis_yet' }, { status: 403 })
       }
+
+      // MAX_CHAT_TURNS (checked client-side, and implicitly bounded above by
+      // MAX_HISTORY_MESSAGES) caps one clip's thread, but a scripted client
+      // could still call this endpoint indefinitely by sending a forged short
+      // history each time. This counter is server-tracked per account, so it
+      // holds no matter what history the request claims.
+      const chatUsage = await checkAndConsumeChatUsage(data.user.id)
+      if (!chatUsage.allowed) {
+        return Response.json(
+          {
+            error: 'chat_monthly_cap_reached',
+            message: "You've reached this month's chat limit — more opens up next month.",
+          },
+          { status: 429 },
+        )
+      }
     } catch (err) {
       console.error('Billing check failed in feedback/chat:', err)
       return Response.json({ error: 'billing_check_failed' }, { status: 500 })
     }
-  }
-
-  const { profile, metrics, feedback, clipTitle, history, question } = (await req.json()) as {
-    profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
-    metrics: PoseMetrics
-    feedback: Feedback
-    clipTitle: string
-    history: ChatMessage[]
-    question: string
-  }
-
-  if (!profile || !metrics || !feedback || !question?.trim()) {
-    return Response.json({ error: 'profile, metrics, feedback, and question are required' }, { status: 400 })
   }
 
   const askedSoFar = (history ?? []).filter((m) => m.role === 'user').length
@@ -71,7 +112,7 @@ export async function POST(req: Request) {
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    return Response.json({ reply: buildMockChatReply(feedback, metrics, question) })
+    return Response.json({ reply: buildMockChatReply(feedback, metrics, question, language) })
   }
 
   const reads = movementReads(metrics)
@@ -92,7 +133,10 @@ export async function POST(req: Request) {
         `Strengths already given: ${feedback.strengths.join('; ')}`,
         `Improvements already given: ${feedback.improvements.join('; ')}`,
         `Scores already given: ${Object.entries(feedback.scores).map(([k, v]) => `${k} ${v}`).join(', ')}`,
-      ].join('\n'),
+        language !== 'en' ? `Reply entirely in ${LANGUAGE_NAMES[language]}, regardless of what language the question was asked in.` : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
       messages: [
         ...(history ?? []).map((m) => ({
           role: m.role,
@@ -103,9 +147,9 @@ export async function POST(req: Request) {
     })
 
     const text = response.content.find((b) => b.type === 'text')?.text ?? ''
-    return Response.json({ reply: text || buildMockChatReply(feedback, metrics, question) })
+    return Response.json({ reply: text || buildMockChatReply(feedback, metrics, question, language) })
   } catch (err) {
     console.error('Claude chat reply failed, returning mock:', err)
-    return Response.json({ reply: buildMockChatReply(feedback, metrics, question) })
+    return Response.json({ reply: buildMockChatReply(feedback, metrics, question, language) })
   }
 }

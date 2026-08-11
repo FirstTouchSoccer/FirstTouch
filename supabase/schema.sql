@@ -200,10 +200,30 @@ create table if not exists public.billing_accounts (
   subscription_status text not null default 'none', -- none | active | trialing | past_due | canceled | unpaid | incomplete | incomplete_expired | paused
   free_analyses_used int not null default 0,
   free_analyses_limit int not null default 2,
+  -- Entitled (Pro) accounts get a monthly analysis cap too -- "unlimited" in
+  -- the marketing copy is a fair-use ceiling, not literally uncapped, so a
+  -- $20/mo subscriber can never run up unbounded Anthropic API cost. See
+  -- PRO_MONTHLY_ANALYSIS_LIMIT in lib/billing-server.ts for the number and
+  -- the cost math behind it. pro_analyses_period is the 'YYYY-MM' the count
+  -- applies to; a mismatch against the current month means "reset to 0".
+  pro_analyses_used int not null default 0,
+  pro_analyses_period text,
+  -- Monthly chat-message cap, applied to every account regardless of tier --
+  -- a second, independent lever on the same cost guarantee (see
+  -- CHAT_MESSAGE_MONTHLY_LIMIT in lib/billing-server.ts).
+  chat_messages_used int not null default 0,
+  chat_messages_period text,
   current_period_end timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Existing installs: add the monthly-cap columns if this table already
+-- existed before those caps were introduced.
+alter table public.billing_accounts add column if not exists pro_analyses_used int not null default 0;
+alter table public.billing_accounts add column if not exists pro_analyses_period text;
+alter table public.billing_accounts add column if not exists chat_messages_used int not null default 0;
+alter table public.billing_accounts add column if not exists chat_messages_period text;
 
 alter table public.billing_accounts enable row level security;
 

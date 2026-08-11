@@ -16,28 +16,38 @@ function isRecent(iso: string, from: Date): boolean {
  * base is the mean of the player's attributes, plus a small bounded bonus for
  * verified activity (real, non-sample clips and delivered coach notes).
  */
+export type ActivityState =
+  | { kind: 'new' }
+  | { kind: 'improving'; recentClips: number }
+  | { kind: 'steady' }
+
+/**
+ * Returns raw state rather than a formatted label — this is a plain data
+ * function with no access to the current UI language, so the caller (which
+ * has the translation dictionary) turns this into display text.
+ */
 export function computeOvr(
   profile: Player,
   clips: Clip[],
   notes: CoachNote[],
   now: Date = new Date()
-): { ovr: number; activityLabel: string } {
+): { ovr: number; activity: ActivityState } {
   const bonus = Math.min(6, clips.length * 0.5 + notes.length * 1)
   const ovr = Math.max(0, Math.min(99, Math.round(average(profile.attributes) + bonus)))
 
   const recentClips = clips.filter((c) => isRecent(c.createdAt, now)).length
   const recentNotes = notes.filter((n) => isRecent(n.createdAt, now)).length
 
-  let activityLabel: string
+  let activity: ActivityState
   if (clips.length === 0 && notes.length === 0) {
-    activityLabel = 'New here — upload your first clip'
+    activity = { kind: 'new' }
   } else if (recentClips + recentNotes > 0) {
-    activityLabel = `Improving — ${recentClips} upload${recentClips === 1 ? '' : 's'} this month`
+    activity = { kind: 'improving', recentClips }
   } else {
-    activityLabel = 'Steady — no new uploads this month'
+    activity = { kind: 'steady' }
   }
 
-  return { ovr, activityLabel }
+  return { ovr, activity }
 }
 
 /** Consecutive days (ending today) with at least one real activity event. */

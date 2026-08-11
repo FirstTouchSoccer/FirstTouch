@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { CreditCard, Sparkles } from 'lucide-react'
 import { isDemoMode, openBillingPortal, startCheckout } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
+import { tf } from '@/lib/i18n/format'
 
 /**
  * Account-wide, unlike the rest of this player-scoped tab — one subscription
@@ -12,6 +14,8 @@ import { usePlayers } from '@/lib/players-context'
  */
 export function BillingCard() {
   const { billing } = usePlayers()
+  const { t, language } = useTranslation()
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US'
   const [busy, setBusy] = useState(false)
 
   async function upgrade() {
@@ -40,24 +44,26 @@ export function BillingCard() {
             <CreditCard className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-bold leading-none">Billing</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Applies to your whole FirstTouch account</p>
+            <p className="text-sm font-bold leading-none">{t.billing.title}</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">{t.billing.subtitle}</p>
           </div>
         </div>
 
         {isDemoMode ? (
           <p className="mt-4 text-xs text-muted-foreground">
-            Billing isn&apos;t real in this preview — analyses are unlimited here.
+            {t.billing.demoNote}
           </p>
         ) : billing.isEntitled ? (
           <>
             <div className="mt-4 flex items-center justify-between">
               <span className="rounded-full bg-[color:var(--sage)] px-2.5 py-0.5 text-[10px] font-bold text-[color:var(--sage-foreground)]">
-                FirstTouch Pro
+                {t.billing.proBadge}
               </span>
               {billing.currentPeriodEnd && (
                 <span className="text-[11px] text-muted-foreground">
-                  Renews {new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {tf(t.billing.renews, {
+                    date: new Date(billing.currentPeriodEnd).toLocaleDateString(locale, { month: 'short', day: 'numeric' }),
+                  })}
                 </span>
               )}
             </div>
@@ -67,13 +73,13 @@ export function BillingCard() {
               disabled={busy}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
             >
-              {busy ? 'Redirecting…' : 'Manage Billing'}
+              {busy ? t.aiLab.redirecting : t.billing.manageBilling}
             </button>
           </>
         ) : (
           <>
             <p className="mt-4 text-xs text-muted-foreground">
-              Free plan · {billing.freeAnalysesUsed}/{billing.freeAnalysesLimit} free analyses used
+              {tf(t.billing.freePlan, { used: billing.freeAnalysesUsed, limit: billing.freeAnalysesLimit })}
             </p>
             <button
               type="button"
@@ -82,7 +88,7 @@ export function BillingCard() {
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
             >
               <Sparkles className="h-4 w-4" />
-              {busy ? 'Redirecting…' : 'Upgrade to Pro — $20/mo'}
+              {busy ? t.aiLab.redirecting : t.billing.upgradeToPro}
             </button>
           </>
         )}

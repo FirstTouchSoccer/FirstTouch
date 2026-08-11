@@ -5,9 +5,11 @@ import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePlayers } from '@/lib/players-context'
 import { AddPlayerSheet } from '@/components/home/add-player-sheet'
+import { useTranslation } from '@/lib/i18n/context'
 
 export function PlayerSwitcher() {
   const { players, activePlayer, setActivePlayerId } = usePlayers()
+  const { t } = useTranslation()
   const [adding, setAdding] = useState(false)
 
   return (
@@ -34,7 +36,7 @@ export function PlayerSwitcher() {
           className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-muted-foreground"
         >
           <Plus className="h-3.5 w-3.5" />
-          Add player
+          {t.playerSwitcher.addPlayer}
         </button>
       </div>
       {adding && <AddPlayerSheet onClose={() => setAdding(false)} />}

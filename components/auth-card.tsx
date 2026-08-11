@@ -13,9 +13,11 @@ import {
 } from '@/lib/store'
 import { emptyPlayerFields, PlayerFieldsForm, type PlayerFieldsValues } from '@/components/player-fields-form'
 import { ConsentCheckbox } from '@/components/consent-checkbox'
+import { useTranslation } from '@/lib/i18n/context'
 
 export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   const router = useRouter()
+  const { t } = useTranslation()
   const [accountFirstName, setAccountFirstName] = useState('')
   const [accountLastName, setAccountLastName] = useState('')
   const [player, setPlayer] = useState<PlayerFieldsValues>(emptyPlayerFields)
@@ -81,7 +83,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
       }
       router.push('/home')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.')
+      setError(err instanceof Error ? err.message : t.common.somethingWentWrong)
     } finally {
       setBusy(false)
     }
@@ -94,7 +96,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
       await signInWithDemoAccount()
       router.push('/home')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start the demo account.')
+      setError(err instanceof Error ? err.message : t.auth.demoStartError)
     } finally {
       setBusy(false)
     }
@@ -109,21 +111,21 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   if (pendingEmail) {
     return (
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center">
-        <h1 className="text-lg font-bold">Check your email</h1>
+        <h1 className="text-lg font-bold">{t.auth.checkEmailTitle}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We sent a confirmation link to <span className="font-medium text-foreground">{pendingEmail}</span>.
-          Click it to finish signing up — this page will continue automatically once you do, no need to come
-          back and refresh.
+          {t.auth.checkEmailBody.split('{email}')[0]}
+          <span className="font-medium text-foreground">{pendingEmail}</span>
+          {t.auth.checkEmailBody.split('{email}')[1]}
         </p>
         <button
           type="button"
           onClick={resend}
           className="mt-4 w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-semibold"
         >
-          {resent ? 'Sent again' : 'Resend email'}
+          {resent ? t.auth.resentEmail : t.auth.resendEmail}
         </button>
         <Link href="/signup" className="mt-4 block text-xs text-muted-foreground underline underline-offset-2">
-          Back to signup
+          {t.auth.backToSignup}
         </Link>
       </div>
     )
@@ -132,27 +134,25 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   return (
     <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6">
       <h1 className="text-lg font-bold leading-none tracking-tight">
-        {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+        {mode === 'signup' ? t.auth.signupTitle : t.auth.loginTitle}
       </h1>
       <p className="mt-1.5 text-xs text-muted-foreground">
-        {mode === 'signup'
-          ? "Parents/guardians create the account and can add their kids' player profiles."
-          : 'Log in to see your progress and coach feedback.'}
+        {mode === 'signup' ? t.auth.signupSubtitle : t.auth.loginSubtitle}
       </p>
 
       <p className="mt-2 text-xs text-muted-foreground">
         {mode === 'signup' ? (
           <>
-            Already have an account?{' '}
+            {t.auth.alreadyHaveAccount}{' '}
             <Link href="/login" className="font-semibold text-foreground underline underline-offset-2">
-              Log in
+              {t.common.logIn}
             </Link>
           </>
         ) : (
           <>
-            New here?{' '}
+            {t.auth.newHere}{' '}
             <Link href="/signup" className="font-semibold text-foreground underline underline-offset-2">
-              Create an account
+              {t.auth.createAccount}
             </Link>
           </>
         )}
@@ -160,19 +160,19 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
 
       {isDemoMode && (
         <p className="mt-4 rounded-xl bg-secondary px-3 py-2 text-xs text-muted-foreground">
-          Demo mode — no backend configured. Any email &amp; password works; your data stays in this browser.
+          {t.auth.demoModeNote}
         </p>
       )}
 
       <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
         {mode === 'signup' && (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Your info</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.auth.yourInfo}</p>
             <div className="flex gap-3">
               <input
                 required
                 type="text"
-                placeholder="Your first name"
+                placeholder={t.auth.firstName}
                 value={accountFirstName}
                 onChange={(e) => setAccountFirstName(e.target.value)}
                 className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
@@ -180,7 +180,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
               <input
                 required
                 type="text"
-                placeholder="Your last name"
+                placeholder={t.auth.lastName}
                 value={accountLastName}
                 onChange={(e) => setAccountLastName(e.target.value)}
                 className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
@@ -188,7 +188,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
             </div>
 
             <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Add your player
+              {t.auth.addYourPlayer}
             </p>
             <PlayerFieldsForm values={player} onChange={setPlayer} />
           </>
@@ -196,7 +196,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
         <input
           required
           type="email"
-          placeholder="Email"
+          placeholder={t.auth.email}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
@@ -204,7 +204,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
         <input
           required
           type="password"
-          placeholder="Password"
+          placeholder={t.auth.password}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
@@ -219,7 +219,7 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           disabled={busy || (mode === 'signup' && !consented)}
           className="mt-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-60"
         >
-          {mode === 'signup' ? 'Create account' : 'Log in'}
+          {mode === 'signup' ? t.auth.createAccountBtn : t.auth.logInBtn}
         </button>
       </form>
 
@@ -230,17 +230,17 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           disabled={busy}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-background px-4 py-3.5 text-sm font-semibold disabled:opacity-60"
         >
-          Continue with demo account
+          {t.auth.continueWithDemo}
         </button>
       )}
 
       <p className="mt-5 text-center text-[11px] text-muted-foreground">
         <Link href="/terms" className="underline underline-offset-2">
-          Terms of Service
+          {t.auth.termsOfService}
         </Link>{' '}
         ·{' '}
         <Link href="/privacy" className="underline underline-offset-2">
-          Privacy Policy
+          {t.auth.privacyPolicy}
         </Link>
       </p>
     </div>

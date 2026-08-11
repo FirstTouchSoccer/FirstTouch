@@ -1,13 +1,16 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
 import { Star, BadgeCheck, MessageSquareText, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { coaches, coachById, specializationFilters, type Coach } from '@/lib/coaches'
 import { listCoachNotes } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
+import { tf } from '@/lib/i18n/format'
+import type { Dictionary } from '@/lib/i18n/types'
 import type { CoachNote } from '@/lib/types'
+import { PlayerAvatar } from '@/components/player-avatar'
 import { FeedbackHub } from '@/components/coaches/feedback-hub'
 import { BookingFlow } from '@/components/coaches/booking-flow'
 
@@ -16,8 +19,18 @@ type View =
   | { name: 'feedback'; clipId: string }
   | { name: 'booking'; coach: Coach }
 
+const specializationKey: Record<(typeof specializationFilters)[number], keyof Dictionary['specializations']> = {
+  All: 'all',
+  'First Touch': 'firstTouch',
+  Dribbling: 'dribbling',
+  Finishing: 'finishing',
+  Positioning: 'positioning',
+  'Sprint Mechanics': 'sprintMechanics',
+}
+
 export function CoachesTab() {
   const { activePlayer } = usePlayers()
+  const { t } = useTranslation()
   const [view, setView] = useState<View>({ name: 'directory' })
   const [filter, setFilter] =
     useState<(typeof specializationFilters)[number]>('All')
@@ -64,9 +77,9 @@ export function CoachesTab() {
   return (
     <div className="animate-in fade-in duration-500">
       <header className="px-5 pt-8">
-        <h1 className="text-lg font-bold tracking-tight">Coaches</h1>
+        <h1 className="text-lg font-bold tracking-tight">{t.coaches.title}</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          1-on-1 sessions & timestamped video feedback
+          {t.coaches.subtitle}
         </p>
       </header>
 
@@ -83,10 +96,10 @@ export function CoachesTab() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold">
-                New feedback from {coachById(latestNote.coachId)?.name ?? 'your coach'}
+                {tf(t.coaches.newFeedbackFrom, { coach: coachById(latestNote.coachId)?.name ?? t.feedbackHub.yourCoach })}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {latestNoteCount} timestamped note{latestNoteCount === 1 ? '' : 's'} on your clip
+                {t.coaches.timestampedNotes(latestNoteCount)}
               </p>
             </div>
             <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
@@ -108,7 +121,7 @@ export function CoachesTab() {
                 : 'border-border bg-card text-muted-foreground',
             )}
           >
-            {f}
+            {t.specializations[specializationKey[f]]}
           </button>
         ))}
       </div>
@@ -116,7 +129,7 @@ export function CoachesTab() {
       {/* Coach directory */}
       <div className="mt-4 flex flex-col gap-3 px-5 pb-4">
         <h2 className="text-sm font-bold tracking-tight">
-          Pro coaches
+          {t.coaches.proCoaches}
           <span className="ml-1.5 font-normal text-muted-foreground">
             {filtered.length}
           </span>
@@ -124,10 +137,9 @@ export function CoachesTab() {
 
         {coaches.length === 0 && (
           <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center">
-            <p className="text-sm font-bold">Human coaches are coming soon</p>
+            <p className="text-sm font-bold">{t.coaches.comingSoonTitle}</p>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              We&apos;re onboarding real coaches for 1-on-1 sessions and timestamped video feedback. In the
-              meantime, your AI Lab analysis is ready whenever you upload a clip.
+              {t.coaches.comingSoonBody}
             </p>
           </div>
         )}
@@ -141,13 +153,7 @@ export function CoachesTab() {
           >
             <div className="flex gap-3">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl">
-                <Image
-                  src={coach.avatar}
-                  alt={coach.name}
-                  fill
-                  className="object-cover"
-                  sizes="64px"
-                />
+                <PlayerAvatar name={coach.name} avatarUrl={coach.avatar} sizePx={64} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
@@ -155,7 +161,7 @@ export function CoachesTab() {
                   <BadgeCheck className="h-4 w-4 shrink-0 text-primary" />
                 </div>
                 <p className="truncate text-xs text-muted-foreground">
-                  {coach.title}
+                  {coach.title || t.coaches.defaultCoachTitle}
                 </p>
                 <div className="mt-1.5 flex items-center gap-2 text-[11px]">
                   <span className="flex items-center gap-1">
@@ -169,7 +175,7 @@ export function CoachesTab() {
                   <span className="font-bold text-primary">
                     ${coach.rate}
                     <span className="font-normal text-muted-foreground">
-                      /session
+                      {t.coaches.perSession}
                     </span>
                   </span>
                 </div>
@@ -177,7 +183,7 @@ export function CoachesTab() {
             </div>
 
             <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
-              {coach.bio}
+              {coach.bio || t.coaches.profileComingSoon}
             </p>
 
             {/* Badges */}
@@ -205,7 +211,7 @@ export function CoachesTab() {
               onClick={() => setView({ name: 'booking', coach })}
               className="mt-4 w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-[0.98]"
             >
-              Book 1-on-1
+              {t.coaches.bookSession}
             </button>
           </div>
         ))}

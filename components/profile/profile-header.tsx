@@ -4,15 +4,19 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BadgeCheck, Camera, Loader2, MapPin, LogOut, Film, MessageSquareText, Trophy, Flame } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { LanguageToggle } from '@/components/language-toggle'
 import { PlayerAvatar } from '@/components/player-avatar'
 import { usePlayers } from '@/lib/players-context'
 import { listBookings, listClips, listCoachNotes, signOut, updatePlayer } from '@/lib/store'
 import { fileToAvatarDataUrl } from '@/lib/image-resize'
 import { computeOvr, computeStreak } from '@/lib/rating'
+import { useTranslation } from '@/lib/i18n/context'
+import { tf } from '@/lib/i18n/format'
 import type { Clip, CoachNote, SessionBooking } from '@/lib/types'
 
 export function ProfileHeader() {
   const router = useRouter()
+  const { t } = useTranslation()
   const { activePlayer: profile, refreshPlayers } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
@@ -50,28 +54,29 @@ export function ProfileHeader() {
       await updatePlayer(profile.id, { avatarUrl: dataUrl })
       await refreshPlayers()
     } catch (err) {
-      setAvatarError(err instanceof Error ? err.message : 'Could not update photo.')
+      setAvatarError(err instanceof Error ? err.message : t.profile.couldNotUpdatePhoto)
     } finally {
       setAvatarUploading(false)
     }
   }
 
   const stats = [
-    { label: 'Uploads', value: String(clips.length), icon: Film },
-    { label: 'Coach Notes', value: String(notes.length), icon: MessageSquareText },
-    { label: 'Sessions', value: String(sessionCount), icon: Trophy },
-    { label: 'Day Streak', value: String(streak), icon: Flame },
+    { label: t.profile.uploads, value: String(clips.length), icon: Film },
+    { label: t.profile.coachNotes, value: String(notes.length), icon: MessageSquareText },
+    { label: t.profile.sessions, value: String(sessionCount), icon: Trophy },
+    { label: t.profile.dayStreak, value: String(streak), icon: Flame },
   ]
 
   return (
     <header className="px-5 pt-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold tracking-tight">Profile</h1>
+        <h1 className="text-lg font-bold tracking-tight">{t.profile.title}</h1>
         <div className="flex items-center gap-2">
+          <LanguageToggle />
           <ThemeToggle />
           <button
             type="button"
-            aria-label="Sign out"
+            aria-label={t.home.signOut}
             onClick={handleSignOut}
             className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors duration-200"
           >
@@ -94,7 +99,7 @@ export function ProfileHeader() {
             </div>
             <button
               type="button"
-              aria-label="Change player photo"
+              aria-label={t.profile.changePhoto}
               onClick={() => fileInputRef.current?.click()}
               disabled={avatarUploading}
               className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-primary text-primary-foreground disabled:opacity-60"
@@ -127,11 +132,11 @@ export function ProfileHeader() {
                 {profile.position}
               </span>
               <span className="rounded-full bg-secondary px-2.5 py-0.5 text-[10px] font-bold text-[color:var(--sand)]">
-                {ovr} OVR
+                {ovr} {t.home.ovr}
               </span>
               {profile.age != null && (
                 <span className="text-[11px] font-medium text-muted-foreground">
-                  Age {profile.age}
+                  {tf(t.profile.ageLabel, { age: profile.age })}
                 </span>
               )}
             </div>

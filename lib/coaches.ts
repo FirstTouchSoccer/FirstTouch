@@ -21,7 +21,36 @@ export type Coach = {
   bio: string
 }
 
-export const coaches: Coach[] = []
+// Real coaches, added by the FirstTouch team. Avatar is '' until a real photo
+// is uploaded (renders as an initials avatar, never a stock photo). Rating/
+// reviews start at 0 — true, not fabricated — and rise only from real
+// completed sessions. No badges/specializations until confirmed.
+export const coaches: Coach[] = [
+  {
+    id: 'mandy',
+    name: 'Mandy',
+    avatar: '',
+    title: '',
+    badges: [],
+    specializations: [],
+    rating: 0,
+    reviews: 0,
+    rate: 10,
+    bio: '',
+  },
+  {
+    id: 'wei-guo',
+    name: 'Wei Guo',
+    avatar: '',
+    title: '',
+    badges: [],
+    specializations: [],
+    rating: 0,
+    reviews: 0,
+    rate: 10,
+    bio: '',
+  },
+]
 
 export function coachById(id: string): Coach | undefined {
   return coaches.find((c) => c.id === id)

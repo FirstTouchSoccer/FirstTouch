@@ -5,6 +5,7 @@ import { TrendingUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { listClips, listCoachNotes } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
 import type { Clip, CoachNote } from '@/lib/types'
 
 const ranges = ['7D', '30D', '90D'] as const
@@ -62,6 +63,7 @@ function bucketCumulative(dates: string[], days: number): number[] {
 }
 
 export function ProgressionChart() {
+  const { t } = useTranslation()
   const { activePlayer } = usePlayers()
   const [range, setRange] = useState<Range>('30D')
   const [clips, setClips] = useState<Clip[]>([])
@@ -84,11 +86,11 @@ export function ProgressionChart() {
 
   if (total === 0) {
     return (
-      <section className="px-5 pt-6" aria-label="Form and progression">
+      <section className="px-5 pt-6" aria-label={t.home.formProgression}>
         <div className="rounded-3xl border border-border bg-card p-5 text-center">
-          <h2 className="text-sm font-semibold">Form &amp; Progression</h2>
+          <h2 className="text-sm font-semibold">{t.home.formProgression}</h2>
           <p className="mt-2 text-xs text-muted-foreground">
-            Upload your first clip to start tracking activity over time.
+            {t.home.uploadFirstClipToTrack}
           </p>
         </div>
       </section>
@@ -96,17 +98,17 @@ export function ProgressionChart() {
   }
 
   return (
-    <section className="px-5 pt-6" aria-label="Form and progression">
+    <section className="px-5 pt-6" aria-label={t.home.formProgression}>
       <div className="rounded-3xl border border-border bg-card p-5">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold">Form &amp; Progression</h2>
+              <h2 className="text-sm font-semibold">{t.home.formProgression}</h2>
             </div>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5 text-sage" />
               <span className="font-semibold text-sage">{total}</span>
-              uploads &amp; notes in the last {range}
+              {t.home.uploadsAndNotesIn} {range}
             </p>
           </div>
           <div className="flex gap-1 rounded-full bg-secondary p-1">
@@ -133,7 +135,7 @@ export function ProgressionChart() {
             viewBox={`0 0 ${W} ${H}`}
             className="h-36 w-full"
             role="img"
-            aria-label={`Activity trend over ${range}`}
+            aria-label={t.home.activityTrendOver(range)}
             preserveAspectRatio="none"
           >
             <defs>

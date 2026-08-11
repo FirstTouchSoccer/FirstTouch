@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
+import { PlayerAvatar } from '@/components/player-avatar'
 import {
   ArrowLeft,
   Star,
@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils'
 import type { Coach } from '@/lib/coaches'
 import { createBooking } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
+import { tf } from '@/lib/i18n/format'
 import type { SessionBooking } from '@/lib/types'
 
 type Step = 'calendar' | 'questionnaire' | 'confirmed'
@@ -56,15 +58,6 @@ function downloadIcs(booking: SessionBooking, coachName: string) {
 
 const slots = ['09:00', '10:30', '13:00', '14:30', '16:00', '17:30']
 
-const focusOptions = [
-  'First touch under pressure',
-  'Weak foot control',
-  '1v1 dribbling',
-  'Finishing & shooting',
-  'Positioning & scanning',
-  'Sprint mechanics',
-]
-
 export function BookingFlow({
   coach,
   onBack,
@@ -73,12 +66,23 @@ export function BookingFlow({
   onBack: () => void
 }) {
   const { activePlayer } = usePlayers()
+  const { t, language } = useTranslation()
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US'
+  const focusOptions = [
+    t.bookingFlow.focusOption1,
+    t.bookingFlow.focusOption2,
+    t.bookingFlow.focusOption3,
+    t.bookingFlow.focusOption4,
+    t.bookingFlow.focusOption5,
+    t.bookingFlow.focusOption6,
+  ]
+  const levels = [t.bookingFlow.levelRecreational, t.bookingFlow.levelCompetitive, t.bookingFlow.levelAcademy]
   const [days] = useState(() => buildDays())
   const [step, setStep] = useState<Step>('calendar')
   const [day, setDay] = useState(days[2])
   const [slot, setSlot] = useState<string | null>(null)
   const [focus, setFocus] = useState<string[]>([])
-  const [level, setLevel] = useState('Competitive club')
+  const [level, setLevel] = useState(t.bookingFlow.levelCompetitive)
   const [notes, setNotes] = useState('')
   const [booking, setBooking] = useState<SessionBooking | null>(null)
   const [saving, setSaving] = useState(false)
@@ -113,25 +117,19 @@ export function BookingFlow({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back to coaches"
+          aria-label={t.bookingFlow.backToCoaches}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-lg font-bold tracking-tight">Book a session</h1>
+        <h1 className="text-lg font-bold tracking-tight">{t.bookingFlow.title}</h1>
       </header>
 
       {/* Coach summary */}
       <div className="mt-5 px-5">
         <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
           <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
-            <Image
-              src={coach.avatar}
-              alt={coach.name}
-              fill
-              className="object-cover"
-              sizes="56px"
-            />
+            <PlayerAvatar name={coach.name} avatarUrl={coach.avatar} sizePx={56} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
@@ -139,13 +137,13 @@ export function BookingFlow({
               <BadgeCheck className="h-4 w-4 shrink-0 text-primary" />
             </div>
             <p className="truncate text-xs text-muted-foreground">
-              {coach.title}
+              {coach.title || t.coaches.defaultCoachTitle}
             </p>
             <div className="mt-1 flex items-center gap-1 text-[11px]">
               <Star className="h-3 w-3 fill-bronze text-bronze" />
               <span className="font-semibold">{coach.rating}</span>
               <span className="text-muted-foreground">
-                · ${coach.rate}/session
+                · ${coach.rate}{t.bookingFlow.perSession}
               </span>
             </div>
           </div>
@@ -178,7 +176,7 @@ export function BookingFlow({
                   step === s ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
-                {s === 'calendar' ? 'Date & time' : 'Focus'}
+                {s === 'calendar' ? t.bookingFlow.dateAndTime : t.bookingFlow.focus}
               </span>
             </div>
           ))}
@@ -191,7 +189,7 @@ export function BookingFlow({
           <div className="mb-2 flex items-center gap-1.5">
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
             <p className="text-sm font-semibold">
-              Select a date · {day.toLocaleDateString('en-US', { month: 'long' })}
+              {t.bookingFlow.selectDate} · {day.toLocaleDateString(locale, { month: 'long' })}
             </p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -208,7 +206,7 @@ export function BookingFlow({
                 )}
               >
                 <span className="text-[11px] font-medium opacity-80">
-                  {d.toLocaleDateString('en-US', { weekday: 'short' })}
+                  {d.toLocaleDateString(locale, { weekday: 'short' })}
                 </span>
                 <span className="text-base font-bold">{d.getDate()}</span>
               </button>
@@ -217,7 +215,7 @@ export function BookingFlow({
 
           <div className="mb-2 mt-5 flex items-center gap-1.5">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm font-semibold">Available slots</p>
+            <p className="text-sm font-semibold">{t.bookingFlow.availableSlots}</p>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {slots.map((s) => (
@@ -243,7 +241,7 @@ export function BookingFlow({
             onClick={() => setStep('questionnaire')}
             className="mt-6 w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-opacity disabled:opacity-40"
           >
-            Continue
+            {t.bookingFlow.continue}
           </button>
         </div>
       )}
@@ -252,10 +250,10 @@ export function BookingFlow({
       {step === 'questionnaire' && (
         <div className="mt-5 px-5">
           <h2 className="text-sm font-bold tracking-tight">
-            What do you want to focus on?
+            {t.bookingFlow.focusQuestion}
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Select all that apply — your coach preps around this.
+            {t.bookingFlow.focusSubtitle}
           </p>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -277,10 +275,10 @@ export function BookingFlow({
           </div>
 
           <h3 className="mt-6 text-sm font-bold tracking-tight">
-            Current level
+            {t.bookingFlow.currentLevel}
           </h3>
           <div className="mt-2 flex flex-col gap-2">
-            {['Recreational', 'Competitive club', 'Academy / semi-pro'].map(
+            {levels.map(
               (l) => (
                 <button
                   key={l}
@@ -310,13 +308,13 @@ export function BookingFlow({
           </div>
 
           <label className="mt-6 block text-sm font-bold tracking-tight">
-            Anything else?
+            {t.bookingFlow.anythingElse}
           </label>
           <textarea
             rows={3}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="e.g. I struggle receiving with my back to goal..."
+            placeholder={t.bookingFlow.notesPlaceholder}
             className="mt-2 w-full resize-none rounded-2xl border border-border bg-card p-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
           />
 
@@ -326,7 +324,7 @@ export function BookingFlow({
             disabled={saving}
             className="mt-5 w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
-            {saving ? 'Booking…' : 'Confirm booking'}
+            {saving ? t.bookingFlow.booking : t.bookingFlow.confirmBooking}
           </button>
         </div>
       )}
@@ -339,37 +337,30 @@ export function BookingFlow({
               <Check className="h-8 w-8" strokeWidth={3} />
             </span>
             <h2 className="mt-4 text-xl font-bold tracking-tight">
-              Session booked!
+              {t.bookingFlow.sessionBooked}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground text-balance">
-              You&apos;re all set with {coach.name}. Download the calendar
-              file below to add it to your calendar.
+              {tf(t.bookingFlow.allSetWith, { coach: coach.name })}
             </p>
           </div>
 
           <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex items-center gap-3 border-b border-border p-4">
               <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl">
-                <Image
-                  src={coach.avatar}
-                  alt={coach.name}
-                  fill
-                  className="object-cover"
-                  sizes="48px"
-                />
+                <PlayerAvatar name={coach.name} avatarUrl={coach.avatar} sizePx={48} />
               </div>
               <div>
-                <p className="text-sm font-bold">1-on-1 with {coach.name}</p>
+                <p className="text-sm font-bold">{tf(t.activityHistory.oneOnOneWith, { coach: coach.name })}</p>
                 <p className="text-xs text-muted-foreground">
-                  Video call · {booking.durationMin} min
+                  {t.bookingFlow.videoCall} · {booking.durationMin} {t.activityHistory.min}
                 </p>
               </div>
             </div>
             <dl className="divide-y divide-border text-sm">
               <div className="flex items-center justify-between px-4 py-3">
-                <dt className="text-muted-foreground">Date</dt>
+                <dt className="text-muted-foreground">{t.bookingFlow.date}</dt>
                 <dd className="font-semibold">
-                  {new Date(booking.startsAt).toLocaleDateString('en-US', {
+                  {new Date(booking.startsAt).toLocaleDateString(locale, {
                     weekday: 'short',
                     month: 'long',
                     day: 'numeric',
@@ -377,23 +368,23 @@ export function BookingFlow({
                 </dd>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
-                <dt className="text-muted-foreground">Time</dt>
+                <dt className="text-muted-foreground">{t.bookingFlow.time}</dt>
                 <dd className="font-semibold">
-                  {new Date(booking.startsAt).toLocaleTimeString('en-US', {
+                  {new Date(booking.startsAt).toLocaleTimeString(locale, {
                     hour: 'numeric',
                     minute: '2-digit',
                   })}{' '}
-                  · {booking.durationMin} min
+                  · {booking.durationMin} {t.activityHistory.min}
                 </dd>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
-                <dt className="text-muted-foreground">Focus</dt>
+                <dt className="text-muted-foreground">{t.bookingFlow.focusLabel}</dt>
                 <dd className="max-w-[60%] text-right font-semibold">
-                  {booking.focus.length ? booking.focus.join(', ') : 'General review'}
+                  {booking.focus.length ? booking.focus.join(', ') : t.bookingFlow.generalReview}
                 </dd>
               </div>
               <div className="flex items-center justify-between px-4 py-3">
-                <dt className="text-muted-foreground">Total</dt>
+                <dt className="text-muted-foreground">{t.bookingFlow.total}</dt>
                 <dd className="font-bold text-primary">${coach.rate}.00</dd>
               </div>
             </dl>
@@ -405,14 +396,14 @@ export function BookingFlow({
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-sm font-bold text-foreground"
           >
             <CalendarPlus className="h-4 w-4" />
-            Add to calendar
+            {t.bookingFlow.addToCalendar}
           </button>
           <button
             type="button"
             onClick={onBack}
             className="mt-2 w-full rounded-2xl bg-primary py-3.5 text-sm font-bold text-primary-foreground"
           >
-            Done
+            {t.bookingFlow.done}
           </button>
         </div>
       )}

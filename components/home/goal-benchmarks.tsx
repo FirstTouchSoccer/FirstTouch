@@ -5,6 +5,7 @@ import { UploadCloud, MessageSquareText, CalendarCheck, Check } from 'lucide-rea
 import { cn } from '@/lib/utils'
 import { listBookings, listClips, listCoachNotes } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
 
 type Goal = {
   title: string
@@ -15,6 +16,7 @@ type Goal = {
 }
 
 export function GoalBenchmarks() {
+  const { t } = useTranslation()
   const { activePlayer } = usePlayers()
   const [clipCount, setClipCount] = useState(0)
   const [noteCount, setNoteCount] = useState(0)
@@ -29,22 +31,22 @@ export function GoalBenchmarks() {
 
   const goals: Goal[] = [
     {
-      title: 'Upload Your First Clip',
-      detail: `${Math.min(clipCount, 1)} / 1 completed`,
+      title: t.home.uploadFirstClip,
+      detail: t.home.goalDetail(Math.min(clipCount, 1), 1),
       icon: UploadCloud,
       progress: Math.min(clipCount, 1) * 100,
       done: clipCount >= 1,
     },
     {
-      title: 'Get Coach Feedback',
-      detail: `${Math.min(noteCount, 1)} / 1 completed`,
+      title: t.home.getCoachFeedback,
+      detail: t.home.goalDetail(Math.min(noteCount, 1), 1),
       icon: MessageSquareText,
       progress: Math.min(noteCount, 1) * 100,
       done: noteCount >= 1,
     },
     {
-      title: 'Book a Session',
-      detail: `${Math.min(bookingCount, 1)} / 1 completed`,
+      title: t.home.bookASession,
+      detail: t.home.goalDetail(Math.min(bookingCount, 1), 1),
       icon: CalendarCheck,
       progress: Math.min(bookingCount, 1) * 100,
       done: bookingCount >= 1,
@@ -54,7 +56,7 @@ export function GoalBenchmarks() {
   return (
     <section className="px-5 pt-8" aria-label="Goal benchmarks">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Getting Started</h2>
+        <h2 className="text-sm font-semibold">{t.home.gettingStarted}</h2>
         <span className="text-xs font-medium text-muted-foreground">
           {goals.filter((g) => g.done).length} / {goals.length}
         </span>
@@ -99,7 +101,7 @@ export function GoalBenchmarks() {
                         g.done ? 'text-sage' : 'text-muted-foreground',
                       )}
                     >
-                      {g.done ? 'Done' : `${g.progress}%`}
+                      {g.done ? t.home.goalDone : `${g.progress}%`}
                     </span>
                   </div>
                   <p className="truncate text-xs text-muted-foreground">

@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { X, Play } from 'lucide-react'
+import { useTranslation } from '@/lib/i18n/context'
 
 export type PlayerTarget = {
   title: string
@@ -18,6 +19,7 @@ export function VideoPlayer({
   onClose: () => void
 }) {
   const { title, thumb, tags = [], videoUrl } = target
+  const { t } = useTranslation()
 
   return (
     <div
@@ -30,7 +32,7 @@ export function VideoPlayer({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close player"
+          aria-label={t.videoPlayer.closePlayer}
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
         >
           <X className="h-4 w-4" />
@@ -62,12 +64,12 @@ export function VideoPlayer({
                 </span>
               </div>
               <p className="absolute bottom-3 left-3 rounded-md bg-charcoal/80 px-2 py-1 text-[11px] text-[color:var(--secondary)]">
-                Preview only — no video file for this sample
+                {t.videoPlayer.previewOnly}
               </p>
             </>
           ) : (
             <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-              No preview available
+              {t.videoPlayer.noPreview}
             </div>
           )}
         </div>
@@ -75,7 +77,7 @@ export function VideoPlayer({
         {tags.length > 0 && (
           <div className="mt-6 px-5">
             <p className="mb-2 text-xs font-semibold text-muted-foreground">
-              AI metadata
+              {t.videoPlayer.aiMetadata}
             </p>
             <div className="flex flex-wrap gap-2">
               {tags.map((t) => (

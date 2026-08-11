@@ -9,6 +9,7 @@ import {
   mediaItems,
   type MediaKind,
 } from '@/components/profile/profile-data'
+import { useTranslation } from '@/lib/i18n/context'
 
 const kindIcon = {
   clip: Play,
@@ -17,6 +18,7 @@ const kindIcon = {
 }
 
 export function MediaGrid() {
+  const { t } = useTranslation()
   const [filter, setFilter] = useState<MediaKind | 'all'>('all')
 
   const filtered = useMemo(
@@ -30,9 +32,9 @@ export function MediaGrid() {
   return (
     <section className="px-5 pt-8" aria-label="Personal media gallery">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Media Gallery</h2>
+        <h2 className="text-sm font-semibold">{t.profile.mediaGallery}</h2>
         <span className="text-xs font-medium text-muted-foreground">
-          {mediaItems.length} items
+          {t.profile.items(mediaItems.length)}
         </span>
       </div>
 

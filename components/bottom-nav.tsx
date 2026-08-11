@@ -2,19 +2,21 @@
 
 import { Home, Clapperboard, Plus, Target, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTranslation } from '@/lib/i18n/context'
+import type { Dictionary } from '@/lib/i18n/types'
 
 export type TabId = 'home' | 'vault' | 'upload' | 'train' | 'profile'
 
 const items: {
   id: TabId
-  label: string
+  labelKey: keyof Dictionary['nav']
   icon: typeof Home
 }[] = [
-  { id: 'home', label: 'Home', icon: Home },
-  { id: 'vault', label: 'Vault', icon: Clapperboard },
-  { id: 'upload', label: 'Upload', icon: Plus },
-  { id: 'train', label: 'Train', icon: Target },
-  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'home', labelKey: 'home', icon: Home },
+  { id: 'vault', labelKey: 'vault', icon: Clapperboard },
+  { id: 'upload', labelKey: 'upload', icon: Plus },
+  { id: 'train', labelKey: 'train', icon: Target },
+  { id: 'profile', labelKey: 'profile', icon: User },
 ]
 
 export function BottomNav({
@@ -24,6 +26,7 @@ export function BottomNav({
   activeTab: TabId
   onChange: (tab: TabId) => void
 }) {
+  const { t } = useTranslation()
   return (
     <nav
       aria-label="Primary"
@@ -40,11 +43,11 @@ export function BottomNav({
                 <button
                   type="button"
                   onClick={() => onChange(item.id)}
-                  aria-label="Upload a clip"
+                  aria-label={t.nav.uploadClipAria}
                   className="-mt-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95 md:mt-0 md:h-12 md:w-full md:rounded-xl"
                 >
                   <Icon className="h-6 w-6" strokeWidth={2.5} />
-                  <span className="hidden lg:ml-2 lg:inline">Upload</span>
+                  <span className="hidden lg:ml-2 lg:inline">{t.nav.upload}</span>
                 </button>
               </li>
             )
@@ -65,7 +68,7 @@ export function BottomNav({
                   className="h-[22px] w-[22px]"
                   strokeWidth={isActive ? 2.5 : 2}
                 />
-                <span className="md:hidden lg:inline">{item.label}</span>
+                <span className="md:hidden lg:inline">{t.nav[item.labelKey]}</span>
               </button>
             </li>
           )

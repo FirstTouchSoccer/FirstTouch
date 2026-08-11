@@ -24,6 +24,8 @@ import { analyzeVideo } from '@/lib/pose'
 import { getVideoDuration } from '@/lib/video-duration'
 import { buildMockFeedback } from '@/lib/mock-feedback'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
+import { tf } from '@/lib/i18n/format'
 import type { Clip, Feedback, SkillTag } from '@/lib/types'
 
 type Mode = 'skill' | 'match'
@@ -32,36 +34,16 @@ type Phase = 'idle' | 'processing' | 'result'
 const MAX_SKILL_CLIP_SECONDS = 60
 const MAX_MATCH_BYTES = 2 * 1024 * 1024 * 1024
 
-const recordingTips = [
-  { icon: Smartphone, text: 'Landscape orientation, camera steady or braced' },
-  { icon: User, text: 'Full body in frame — just the one player' },
-  { icon: Sun, text: 'Good daylight or well-lit indoors, avoid backlighting' },
-  { icon: Video, text: `Up to ${MAX_SKILL_CLIP_SECONDS}s, MP4 or MOV` },
-]
-
-const skills: { id: SkillTag; label: string; icon: typeof Gauge }[] = [
-  { id: 'shot-velocity', label: 'Shot Velocity', icon: Gauge },
-  { id: 'free-kick-curve', label: 'Free Kick Curve', icon: Wind },
-  { id: 'penalty-placement', label: 'Penalty Placement', icon: Target },
-  { id: '1v1-dribble', label: '1v1 Dribble', icon: Crosshair },
-]
-
-const skillSteps = [
-  'Uploading your clip...',
-  'Reading your movement...',
-  'Getting your coach feedback...',
-  'Almost done...',
-]
-
-const matchSteps = [
-  'Uploading your session...',
-  'Packaging for your coach...',
-  'Sending notification...',
-  'Almost done...',
+const skills: { id: SkillTag; labelKey: 'shotVelocity' | 'freeKickCurve' | 'penaltyPlacement' | 'oneVOneDribble'; icon: typeof Gauge }[] = [
+  { id: 'shot-velocity', labelKey: 'shotVelocity', icon: Gauge },
+  { id: 'free-kick-curve', labelKey: 'freeKickCurve', icon: Wind },
+  { id: 'penalty-placement', labelKey: 'penaltyPlacement', icon: Target },
+  { id: '1v1-dribble', labelKey: 'oneVOneDribble', icon: Crosshair },
 ]
 
 export function AiLabTab() {
   const { activePlayer: profile, billing, refreshBilling } = usePlayers()
+  const { t, language } = useTranslation()
   const [mode, setMode] = useState<Mode>('skill')
   const [phase, setPhase] = useState<Phase>('idle')
   const [skill, setSkill] = useState(skills[0])
@@ -71,9 +53,19 @@ export function AiLabTab() {
   const [savedClip, setSavedClip] = useState<Clip | null>(null)
   const [activeStep, setActiveStep] = useState(0)
   const [paywallNotice, setPaywallNotice] = useState(false)
+  const [capNotice, setCapNotice] = useState(false)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  const recordingTips = [
+    { icon: Smartphone, text: t.aiLab.tipLandscape },
+    { icon: User, text: t.aiLab.tipFullBody },
+    { icon: Sun, text: t.aiLab.tipLighting },
+    { icon: Video, text: tf(t.aiLab.tipLength, { seconds: MAX_SKILL_CLIP_SECONDS }) },
+  ]
+  const skillSteps = [t.aiLab.uploadStep1, t.aiLab.uploadStep2, t.aiLab.uploadStep3, t.aiLab.uploadStep4]
+  const matchSteps = [t.aiLab.matchUploadStep1, t.aiLab.matchUploadStep2, t.aiLab.matchUploadStep3, t.aiLab.matchUploadStep4]
 
   const paywalled = !billing.isEntitled && billing.freeAnalysesUsed >= billing.freeAnalysesLimit
   const freeRemaining = Math.max(0, billing.freeAnalysesLimit - billing.freeAnalysesUsed)
@@ -95,6 +87,7 @@ export function AiLabTab() {
     setSavedClip(null)
     setActiveStep(0)
     setPaywallNotice(false)
+    setCapNotice(false)
     setUploadError(null)
   }
 
@@ -113,15 +106,13 @@ export function AiLabTab() {
       const seconds = await getVideoDuration(picked)
       if (seconds > MAX_SKILL_CLIP_SECONDS) {
         setFile(null)
-        setFileError(
-          `That clip is ${Math.round(seconds)}s — trim it to ${MAX_SKILL_CLIP_SECONDS}s or under and try again.`,
-        )
+        setFileError(tf(t.aiLab.clipTooLong, { seconds: Math.round(seconds), max: MAX_SKILL_CLIP_SECONDS }))
         return
       }
       setFile(picked)
     } catch {
       setFile(null)
-      setFileError("Couldn't read that file — try a different video.")
+      setFileError(t.aiLab.couldNotReadFile)
     }
   }
 
@@ -133,9 +124,7 @@ export function AiLabTab() {
     }
     if (picked.size > MAX_MATCH_BYTES) {
       setFile(null)
-      setFileError(
-        `That file is ${(picked.size / (1024 * 1024 * 1024)).toFixed(1)}GB — FirstTouch accepts up to 2GB per upload.`,
-      )
+      setFileError(tf(t.aiLab.fileTooLarge, { size: (picked.size / (1024 * 1024 * 1024)).toFixed(1) }))
       return
     }
     try {
@@ -146,7 +135,7 @@ export function AiLabTab() {
       setFile(picked)
     } catch {
       setFile(null)
-      setFileError("Couldn't read that file — make sure it's a video, then try again.")
+      setFileError(t.aiLab.couldNotReadVideoFile)
     }
   }
 
@@ -185,6 +174,7 @@ export function AiLabTab() {
             },
             metrics,
             clipTitle: title,
+            language,
           }),
         })
         if (res.status === 402) {
@@ -197,10 +187,17 @@ export function AiLabTab() {
           setPaywallNotice(true)
           return
         }
+        if (res.status === 429) {
+          // Pro's monthly fair-use cap (not a paywall — they're already
+          // subscribed, so no upgrade CTA makes sense here).
+          setPhase('idle')
+          setCapNotice(true)
+          return
+        }
         const data = await res.json()
         feedback = data.feedback
       } catch {
-        feedback = buildMockFeedback(profile, metrics)
+        feedback = buildMockFeedback(profile, metrics, language)
       }
 
       refreshBilling()
@@ -212,7 +209,7 @@ export function AiLabTab() {
       // Anything that throws here (upload, save) previously left the loader
       // spinning forever with no feedback — surface it and let them retry.
       setPhase('idle')
-      setUploadError(err instanceof Error ? err.message : 'Something went wrong with that upload — try again.')
+      setUploadError(err instanceof Error ? err.message : t.aiLab.uploadError)
     }
   }
 
@@ -226,10 +223,10 @@ export function AiLabTab() {
           </span>
           <div>
             <h1 className="text-lg font-bold leading-none tracking-tight">
-              AI Lab
+              {t.aiLab.title}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              Upload clips &amp; full sessions for your coach
+              {t.aiLab.subtitle}
             </p>
           </div>
         </div>
@@ -247,7 +244,7 @@ export function AiLabTab() {
             )}
           >
             <Zap className="h-3.5 w-3.5" />
-            Single-Skill
+            {t.aiLab.singleSkill}
           </button>
           <button
             type="button"
@@ -260,7 +257,7 @@ export function AiLabTab() {
             )}
           >
             <Film className="h-3.5 w-3.5" />
-            Full Match
+            {t.aiLab.fullMatch}
           </button>
         </div>
       </header>
@@ -268,7 +265,7 @@ export function AiLabTab() {
       <div className="px-5 pt-5">
         {phase === 'processing' && (
           <AiLoader
-            title={mode === 'skill' ? 'Analyzing your clip' : 'Sending your session'}
+            title={mode === 'skill' ? t.aiLab.analyzingClip : t.aiLab.sendingSession}
             steps={mode === 'skill' ? skillSteps : matchSteps}
             activeStep={mode === 'skill' ? activeStep : undefined}
             onComplete={() => setPhase('result')}
@@ -285,7 +282,7 @@ export function AiLabTab() {
 
         {phase === 'idle' && mode === 'skill' && (
           <div className="animate-in fade-in duration-300">
-            <p className="mb-3 text-sm font-semibold">Pick a skill to analyze</p>
+            <p className="mb-3 text-sm font-semibold">{t.aiLab.pickSkill}</p>
             <div className="grid grid-cols-2 gap-3">
               {skills.map((s) => {
                 const Icon = s.icon
@@ -313,7 +310,7 @@ export function AiLabTab() {
                       <Icon className="h-[18px] w-[18px]" />
                     </span>
                     <span className="text-xs font-semibold leading-tight text-pretty">
-                      {s.label}
+                      {t.skillTags[s.labelKey]}
                     </span>
                   </button>
                 )
@@ -322,7 +319,7 @@ export function AiLabTab() {
 
             <div className="mt-4 rounded-2xl border border-border bg-card p-4">
               <p className="text-xs font-semibold text-muted-foreground">
-                How to record it
+                {t.aiLab.howToRecord}
               </p>
               <ul className="mt-2 flex flex-col gap-2">
                 {recordingTips.map((tip) => {
@@ -336,20 +333,19 @@ export function AiLabTab() {
                 })}
               </ul>
               <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-                FirstTouch reads body movement from the video — it doesn&apos;t identify who&apos;s in it. Upload{' '}
-                {profile?.name ?? 'this player'}&apos;s own footage so the read and training plan are actually
-                calibrated to their age and experience level.
+                {tf(t.aiLab.notIdentifyNote, { name: profile?.name ?? '' })}
               </p>
             </div>
 
             <Uploader
-              hint={`Drop a clip, up to ${MAX_SKILL_CLIP_SECONDS}s`}
-              sub="Landscape · MP4 or MOV"
+              hint={tf(t.aiLab.dropClip, { seconds: MAX_SKILL_CLIP_SECONDS })}
+              sub={t.aiLab.dropClipSub}
               dragging={dragging}
               setDragging={setDragging}
               onPick={pickSkillFile}
               fileRef={fileRef}
               fileName={file?.name ?? null}
+              tapDifferentFile={t.aiLab.tapDifferentFile}
             />
             {fileError && (
               <p className="mt-2 text-xs font-medium text-rose">{fileError}</p>
@@ -360,12 +356,17 @@ export function AiLabTab() {
 
             {paywallNotice && (
               <p className="mt-2 text-xs font-medium text-rose">
-                You&apos;ve used both free analyses — upgrade to keep going.
+                {t.aiLab.paywallNotice}
               </p>
             )}
-            {!paywallNotice && !billing.isEntitled && !paywalled && (
+            {capNotice && (
+              <p className="mt-2 text-xs font-medium text-rose">
+                {t.aiLab.proCapNotice}
+              </p>
+            )}
+            {!paywallNotice && !capNotice && !billing.isEntitled && !paywalled && (
               <p className="mt-2 text-xs text-muted-foreground">
-                {freeRemaining} free analysis{freeRemaining === 1 ? '' : 'es'} left on your account.
+                {t.aiLab.freeAnalysesLeft(freeRemaining)}
               </p>
             )}
 
@@ -377,17 +378,17 @@ export function AiLabTab() {
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
               >
                 <Sparkles className="h-4 w-4" />
-                {checkoutBusy ? 'Redirecting…' : 'Upgrade to Pro — $20/mo'}
+                {checkoutBusy ? t.aiLab.redirecting : t.aiLab.upgradeButton}
               </button>
             ) : (
               <button
                 type="button"
-                onClick={() => runUpload(skill.id, skill.label)}
+                onClick={() => runUpload(skill.id, t.skillTags[skill.labelKey])}
                 disabled={!file}
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
               >
                 <Sparkles className="h-4 w-4" />
-                Analyze {skill.label}
+                {tf(t.aiLab.analyzeButton, { skill: t.skillTags[skill.labelKey] })}
               </button>
             )}
           </div>
@@ -396,16 +397,17 @@ export function AiLabTab() {
         {phase === 'idle' && mode === 'match' && (
           <div className="animate-in fade-in duration-300">
             <p className="mb-3 text-sm font-semibold">
-              Upload a full game or training session
+              {t.aiLab.uploadFullSession}
             </p>
             <Uploader
-              hint="Drag & drop your footage"
-              sub="Full match or long session · up to 2GB"
+              hint={t.aiLab.dragDropFootage}
+              sub={t.aiLab.fullMatchSub}
               dragging={dragging}
               setDragging={setDragging}
               onPick={pickMatchFile}
               fileRef={fileRef}
               fileName={file?.name ?? null}
+              tapDifferentFile={t.aiLab.tapDifferentFile}
               large
             />
             {fileError && (
@@ -417,17 +419,13 @@ export function AiLabTab() {
 
             <div className="mt-3 rounded-2xl border border-border bg-card p-4">
               <p className="text-xs font-semibold text-muted-foreground">
-                What happens next
+                {t.aiLab.whatHappensNext}
               </p>
               <ul className="mt-2 flex flex-col gap-2 text-xs text-muted-foreground">
-                {[
-                  'Your footage uploads securely to your Vault',
-                  'Your coach gets notified to review the session',
-                  "You'll see their notes in Coaches once it's done",
-                ].map((t) => (
-                  <li key={t} className="flex items-center gap-2">
+                {[t.aiLab.matchStep1, t.aiLab.matchStep2, t.aiLab.matchStep3].map((step) => (
+                  <li key={step} className="flex items-center gap-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-sage" />
-                    {t}
+                    {step}
                   </li>
                 ))}
               </ul>
@@ -435,12 +433,12 @@ export function AiLabTab() {
 
             <button
               type="button"
-              onClick={() => runUpload('full-match', 'Full Match Session')}
+              onClick={() => runUpload('full-match', t.aiLab.fullMatchSessionTitle)}
               disabled={!file}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground active:scale-[0.99] disabled:opacity-40"
             >
               <Sparkles className="h-4 w-4" />
-              Send to your coach
+              {t.aiLab.sendToCoach}
             </button>
           </div>
         )}
@@ -457,6 +455,7 @@ function Uploader({
   onPick,
   fileRef,
   fileName,
+  tapDifferentFile,
   large,
 }: {
   hint: string
@@ -466,6 +465,7 @@ function Uploader({
   onPick: (file: File | null) => void
   fileRef: React.RefObject<HTMLInputElement | null>
   fileName: string | null
+  tapDifferentFile: string
   large?: boolean
 }) {
   return (
@@ -500,7 +500,7 @@ function Uploader({
       </span>
       <span className="mt-3 text-sm font-semibold">{fileName ?? hint}</span>
       <span className="mt-1 text-xs text-muted-foreground">
-        {fileName ? 'Tap to choose a different file' : sub}
+        {fileName ? tapDifferentFile : sub}
       </span>
       <input
         ref={fileRef}

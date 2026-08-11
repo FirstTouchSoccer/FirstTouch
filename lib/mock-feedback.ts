@@ -6,15 +6,28 @@
  * the same curated drill bank the real Claude path uses, so a fallback (e.g.
  * during an Anthropic outage) is still stage-appropriate and grounded rather
  * than a fixed, unrelated plan.
+ *
+ * The curated drill bank itself (lib/coaching-reference.ts) is English-only —
+ * translating that whole library was out of scope here — so in Russian mode
+ * this fallback's own sentences are in Russian, but a drill's name/description
+ * pulled from the bank stays in English. The primary (real Claude) path
+ * doesn't have this gap: Claude is instructed to write natively in the
+ * requested language regardless of the reference material's language.
  */
 import { movementReads } from '@/lib/read'
 import { drillsFor, type DrillCategory } from '@/lib/coaching-reference'
+import { en } from '@/lib/i18n/en'
+import { ru } from '@/lib/i18n/ru'
+import type { Language } from '@/lib/i18n/types'
 import type { Feedback, Player, PoseMetrics, Scores } from '@/lib/types'
 
 export function buildMockFeedback(
   profile: Pick<Player, 'name' | 'position' | 'experience'>,
-  metrics: PoseMetrics
+  metrics: PoseMetrics,
+  language: Language = 'en'
 ): Feedback {
+  const t = (language === 'ru' ? ru : en).mockFeedback
+
   const scores: Scores = {
     technique: blend(metrics.kneeSymmetry, metrics.armBalance),
     balance: blend(metrics.hipStability, 100 - metrics.posturalLean * 4),
@@ -26,56 +39,34 @@ export function buildMockFeedback(
   const strengths: string[] = []
   const improvements: string[] = []
 
-  pick(
-    metrics.hipStability >= 70,
-    strengths,
-    'Hips stay level through movement — a stable base for striking and turning',
-    improvements,
-    'Hips drift sideways during cuts and deceleration; core and glute stability work will tighten this up'
-  )
-  pick(
-    metrics.kneeSymmetry >= 70,
-    strengths,
-    'Both legs load evenly — good left/right symmetry for a developing player',
-    improvements,
-    'Leg loading looks uneven between left and right — add single-leg strength work to balance it out'
-  )
-  pick(
-    metrics.movementIntensity >= 60,
-    strengths,
-    'Work rate and movement intensity stay high across the clip',
-    improvements,
-    'Movement intensity dips over the clip — build match-speed repetition into sessions'
-  )
-  pick(
-    metrics.posturalLean <= 8,
-    strengths,
-    'Upright, controlled posture with a good athletic base position',
-    improvements,
-    'Posture drifts forward at times — staying more compact and upright will improve balance on the ball'
-  )
+  pick(metrics.hipStability >= 70, strengths, t.hipsStrength, improvements, t.hipsImprove)
+  pick(metrics.kneeSymmetry >= 70, strengths, t.kneeStrength, improvements, t.kneeImprove)
+  pick(metrics.movementIntensity >= 60, strengths, t.intensityStrength, improvements, t.intensityImprove)
+  pick(metrics.posturalLean <= 8, strengths, t.postureStrength, improvements, t.postureImprove)
 
-  const firstName = profile.name.split(' ')[0] || 'This player'
+  const firstName = profile.name.split(' ')[0] || profile.position
   return {
     source: 'mock',
-    summary: `${firstName} shows a solid foundation as a ${profile.position}. The analysis picked up ${strengths.length} clear strengths to build on and ${improvements.length} focus areas — the two-week plan below targets the biggest one first.`,
+    summary: t.summary(firstName, profile.position, strengths.length, improvements.length),
     strengths,
     improvements,
     scores,
-    trainingPlan: buildTrainingPlan(profile.experience, metrics),
+    trainingPlan: buildTrainingPlan(profile.experience, metrics, t),
     createdAt: new Date().toISOString(),
   }
 }
 
-const DAY_LABELS = ['Week 1 · Mon', 'Week 1 · Thu', 'Week 2 · Mon', 'Week 2 · Thu']
-
-function buildTrainingPlan(experience: Player['experience'], metrics: PoseMetrics) {
+function buildTrainingPlan(
+  experience: Player['experience'],
+  metrics: PoseMetrics,
+  t: (typeof en)['mockFeedback']
+) {
   const reads = movementReads(metrics)
   const weak = reads.filter((r) => r.band === 'Developing')
   const targets = (weak.length > 0 ? weak : reads.filter((r) => r.band === 'Solid')).slice(0, 3)
 
   const days = targets.map((read, i) => ({
-    day: DAY_LABELS[i] ?? DAY_LABELS[DAY_LABELS.length - 1],
+    day: t.dayLabels[i] ?? t.dayLabels[t.dayLabels.length - 1],
     focus: read.label,
     drills: drillsFor(read.key as DrillCategory, experience)
       .slice(0, 2)
@@ -83,12 +74,12 @@ function buildTrainingPlan(experience: Player['experience'], metrics: PoseMetric
   }))
 
   days.push({
-    day: DAY_LABELS[DAY_LABELS.length - 1],
-    focus: 'Putting it together',
+    day: t.dayLabels[t.dayLabels.length - 1],
+    focus: t.puttingTogether,
     drills: [
       {
-        name: 'Circuit repeat + re-film',
-        description: 'Repeat the same drill from this clip and film it — upload to compare scores.',
+        name: t.circuitDrillName,
+        description: t.circuitDrillDesc,
         duration: '20 min',
       },
     ],

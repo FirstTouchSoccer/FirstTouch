@@ -3,6 +3,7 @@
 import { useMemo } from 'react'
 import { Hexagon } from 'lucide-react'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
 
 const SIZE = 260
 const CENTER = SIZE / 2
@@ -10,12 +11,15 @@ const RADIUS = 92
 const MAX = 99
 const RINGS = [0.25, 0.5, 0.75, 1]
 
+// Abbreviations (PAC/SHO/...) stay in Latin — same convention as "OVR",
+// recognizable regardless of UI language. The full label below each is
+// translated.
 const ATTRIBUTE_META = [
-  { key: 'pace', label: 'Pace', short: 'PAC' },
-  { key: 'shooting', label: 'Shooting', short: 'SHO' },
-  { key: 'dribbling', label: 'Dribbling', short: 'DRI' },
-  { key: 'passing', label: 'Passing', short: 'PAS' },
-  { key: 'physicality', label: 'Physicality', short: 'PHY' },
+  { key: 'pace', labelKey: 'pace', short: 'PAC' },
+  { key: 'shooting', labelKey: 'shooting', short: 'SHO' },
+  { key: 'dribbling', labelKey: 'dribbling', short: 'DRI' },
+  { key: 'passing', labelKey: 'passing', short: 'PAS' },
+  { key: 'physicality', labelKey: 'physicality', short: 'PHY' },
 ] as const
 
 function pointAt(index: number, count: number, radius: number) {
@@ -35,6 +39,7 @@ function polygon(count: number, radius: number) {
 
 export function SkillRadar() {
   const { activePlayer: profile } = usePlayers()
+  const { t } = useTranslation()
 
   const attributes = useMemo(
     () =>
@@ -68,12 +73,12 @@ export function SkillRadar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Hexagon className="h-4 w-4 text-sage" />
-            <h2 className="text-sm font-semibold">Skill Radar</h2>
+            <h2 className="text-sm font-semibold">{t.skillRadar.title}</h2>
           </div>
           <div className="flex items-baseline gap-1 rounded-full bg-secondary px-3 py-1">
             <span className="text-sm font-bold text-foreground">{average}</span>
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              avg
+              {t.skillRadar.avg}
             </span>
           </div>
         </div>
@@ -83,7 +88,7 @@ export function SkillRadar() {
             viewBox={`0 0 ${SIZE} ${SIZE}`}
             className="h-[260px] w-[260px]"
             role="img"
-            aria-label="Radar chart of Pace, Shooting, Dribbling, Passing and Physicality"
+            aria-label={[t.skillRadar.pace, t.skillRadar.shooting, t.skillRadar.dribbling, t.skillRadar.passing, t.skillRadar.physicality].join(', ')}
           >
             {/* grid rings */}
             {RINGS.map((r) => (
@@ -162,7 +167,7 @@ export function SkillRadar() {
           {attributes.map((a) => (
             <li key={a.key} className="flex items-center gap-3">
               <span className="w-20 text-xs font-medium text-muted-foreground">
-                {a.label}
+                {t.skillRadar[a.labelKey]}
               </span>
               <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
                 <span

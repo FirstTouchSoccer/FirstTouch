@@ -4,10 +4,12 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Logo } from '@/components/logo'
+import { useTranslation } from '@/lib/i18n/context'
 
 function CallbackInner() {
   const router = useRouter()
   const params = useSearchParams()
+  const { t } = useTranslation()
   const [error, setError] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
 
@@ -51,27 +53,25 @@ function CallbackInner() {
         await new Promise((r) => setTimeout(r, 300))
       }
       if (!cancelled) {
-        setError(
-          "This link has expired or was already used. If your email app scans links automatically, your account may already be confirmed — try logging in directly."
-        )
+        setError(t.callback.expiredError)
       }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [params, router])
+  }, [params, router, t])
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-background p-6">
       <Logo size="lg" />
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 text-center">
         <p className="text-sm text-muted-foreground">
-          {error ?? (confirmed ? "You're confirmed! Taking you in…" : 'Confirming your email…')}
+          {error ?? (confirmed ? t.callback.confirmed : t.callback.confirming)}
         </p>
         {error && (
           <a href="/login" className="mt-4 block text-xs font-semibold text-foreground underline underline-offset-2">
-            Go to login
+            {t.callback.goToLogin}
           </a>
         )}
       </div>

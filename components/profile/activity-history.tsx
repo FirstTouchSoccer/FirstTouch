@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 import { listBookings, listCoachNotes } from '@/lib/store'
 import { coachById } from '@/lib/coaches'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
+import { tf } from '@/lib/i18n/format'
 import type { CoachNote, SessionBooking } from '@/lib/types'
 
 type HistoryItem =
@@ -14,6 +16,8 @@ type HistoryItem =
 
 export function ActivityHistory() {
   const { activePlayer } = usePlayers()
+  const { t, language } = useTranslation()
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US'
   const [bookings, setBookings] = useState<SessionBooking[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -33,7 +37,7 @@ export function ActivityHistory() {
         kind: 'session',
         id: b.id,
         at: b.startsAt,
-        coachName: coachById(b.coachId)?.name ?? 'Your coach',
+        coachName: coachById(b.coachId)?.name ?? t.feedbackHub.yourCoach,
         durationMin: b.durationMin,
       }),
     ),
@@ -42,7 +46,7 @@ export function ActivityHistory() {
         kind: 'note',
         id: n.id,
         at: n.createdAt,
-        coachName: coachById(n.coachId)?.name ?? 'Your coach',
+        coachName: coachById(n.coachId)?.name ?? t.feedbackHub.yourCoach,
         text: n.text,
       }),
     ),
@@ -53,17 +57,17 @@ export function ActivityHistory() {
   return (
     <section className="px-5 pb-4 pt-8" aria-label="Session and activity history">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Session &amp; Activity History</h2>
+        <h2 className="text-sm font-semibold">{t.activityHistory.title}</h2>
         <button type="button" className="text-xs font-medium text-primary">
-          See all
+          {t.activityHistory.seeAll}
         </button>
       </div>
 
       {loaded && items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border bg-card py-8 text-center">
-          <p className="text-sm font-medium">No sessions or feedback yet</p>
+          <p className="text-sm font-medium">{t.activityHistory.noSessions}</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Book a coach or upload a clip to get started.
+            {t.activityHistory.bookOrUpload}
           </p>
         </div>
       )}
@@ -72,7 +76,7 @@ export function ActivityHistory() {
         {items.map((item) => {
           const isSession = item.kind === 'session'
           const Icon = isSession ? Target : MessageSquareText
-          const dateLabel = new Date(item.at).toLocaleDateString('en-US', {
+          const dateLabel = new Date(item.at).toLocaleDateString(locale, {
             month: 'short',
             day: 'numeric',
           })
@@ -92,8 +96,8 @@ export function ActivityHistory() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
                     {isSession
-                      ? `1-on-1 with ${item.coachName}`
-                      : `Feedback from ${item.coachName}`}
+                      ? tf(t.activityHistory.oneOnOneWith, { coach: item.coachName })
+                      : tf(t.activityHistory.feedbackFrom, { coach: item.coachName })}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {isSession ? dateLabel : `${item.text} · ${dateLabel}`}
@@ -102,13 +106,13 @@ export function ActivityHistory() {
                 {isSession ? (
                   <div className="flex shrink-0 items-center gap-1">
                     <span className="text-xs font-medium text-muted-foreground">
-                      {item.durationMin} min
+                      {item.durationMin} {t.activityHistory.min}
                     </span>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 ) : (
                   <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-primary">
-                    Feedback
+                    {t.activityHistory.feedback}
                   </span>
                 )}
               </div>

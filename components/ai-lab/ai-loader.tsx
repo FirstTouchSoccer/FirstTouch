@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Check, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTranslation } from '@/lib/i18n/context'
 
 type Props = {
   steps: string[]
@@ -20,6 +21,7 @@ export function AiLoader({
   title = 'Saving your clip',
   activeStep,
 }: Props) {
+  const { t } = useTranslation()
   const [internalActive, setInternalActive] = useState(0)
   const controlled = activeStep !== undefined
   const active = controlled ? activeStep : internalActive
@@ -45,7 +47,7 @@ export function AiLoader({
         <div className="flex-1">
           <p className="text-sm font-semibold">{title}</p>
           <p className="text-xs text-muted-foreground">
-            First Touch · {pct}% complete
+            {t.aiLab.percentComplete(pct)}
           </p>
         </div>
       </div>

@@ -6,6 +6,9 @@ import { isTrustedOrigin } from '@/lib/verify-origin'
 import { supabase, supabaseConfigured } from '@/lib/supabase'
 import { checkAndConsumeUsage } from '@/lib/billing-server'
 import { experienceLabel, type Player, type PoseMetrics } from '@/lib/types'
+import type { Language } from '@/lib/i18n/types'
+
+const LANGUAGE_NAMES: Record<Language, string> = { en: 'English', ru: 'Russian' }
 
 export const maxDuration = 120
 
@@ -82,9 +85,34 @@ Write encouraging but honest, specific feedback a club-soccer parent would find 
 - Scores are 0-100 where 50 is typical, 70+ is strong, 85+ is exceptional.
 - Keep language positive and parent-friendly; never shame the player or compare them to other players by name. This is developmental guidance, not medical or injury advice.`
 
+// Belt-and-suspenders bound on client-supplied text fields that flow
+// straight into the prompt — otherwise a single forged request (bypassing
+// the real upload UI, which never sends anything this long) could inflate
+// one call's input tokens arbitrarily, independent of any per-account cap.
+const MAX_TEXT_FIELD_CHARS = 200
+
 export async function POST(req: Request) {
   if (!isTrustedOrigin(req)) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { profile, metrics, clipTitle, language: rawLanguage } = (await req.json()) as {
+    profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
+    metrics: PoseMetrics
+    clipTitle: string
+    language?: Language
+  }
+  const language: Language = rawLanguage === 'ru' ? 'ru' : 'en'
+
+  if (!profile || !metrics) {
+    return Response.json({ error: 'profile and metrics are required' }, { status: 400 })
+  }
+  if (
+    (clipTitle?.length ?? 0) > MAX_TEXT_FIELD_CHARS ||
+    (profile.name?.length ?? 0) > MAX_TEXT_FIELD_CHARS ||
+    (profile.position?.length ?? 0) > MAX_TEXT_FIELD_CHARS
+  ) {
+    return Response.json({ error: 'request_too_large' }, { status: 400 })
   }
 
   // Real auth + usage gating only applies when Supabase is configured at all.
@@ -103,6 +131,15 @@ export async function POST(req: Request) {
     try {
       const usage = await checkAndConsumeUsage(data.user.id)
       if (!usage.allowed) {
+        if (usage.reason === 'pro_monthly_cap') {
+          return Response.json(
+            {
+              error: 'pro_monthly_cap_reached',
+              message: "You've reached this month's analysis limit — more opens up next month.",
+            },
+            { status: 429 },
+          )
+        }
         return Response.json(
           { error: 'free_limit_reached', message: "You've used both free analyses — upgrade to keep going." },
           { status: 402 },
@@ -114,19 +151,9 @@ export async function POST(req: Request) {
     }
   }
 
-  const { profile, metrics, clipTitle } = (await req.json()) as {
-    profile: Pick<Player, 'name' | 'age' | 'experience' | 'position' | 'attributes'>
-    metrics: PoseMetrics
-    clipTitle: string
-  }
-
-  if (!profile || !metrics) {
-    return Response.json({ error: 'profile and metrics are required' }, { status: 400 })
-  }
-
   // No API key configured → labelled mock so the flow still completes.
   if (!process.env.ANTHROPIC_API_KEY) {
-    return Response.json({ feedback: buildMockFeedback(profile, metrics) })
+    return Response.json({ feedback: buildMockFeedback(profile, metrics, language) })
   }
 
   const reads = movementReads(metrics)
@@ -135,7 +162,11 @@ export async function POST(req: Request) {
   try {
     const response = await anthropic.messages.create({
       model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-5',
-      max_tokens: 16000,
+      // Structured JSON output here realistically runs well under 2000
+      // tokens; 8000 leaves generous headroom for adaptive thinking without
+      // letting one call's worst case blow past the per-account cost cap
+      // (see PRO_MONTHLY_ANALYSIS_LIMIT in lib/billing-server.ts).
+      max_tokens: 8000,
       thinking: { type: 'adaptive' },
       system: SYSTEM_PROMPT,
       output_config: { format: { type: 'json_schema', schema: FEEDBACK_SCHEMA } },
@@ -154,6 +185,9 @@ export async function POST(req: Request) {
             referenceContext,
             '',
             'Produce the structured feedback and training plan. Do not cite exact angles or percentages.',
+            language !== 'en'
+              ? `Write every string value in the response (summary, strengths, improvements, training plan day/focus/drill name/description) entirely in ${LANGUAGE_NAMES[language]}. The reference material above is in English — read it for guidance, but do not quote it verbatim; write your own ${LANGUAGE_NAMES[language]} sentences.`
+              : '',
           ]
             .filter(Boolean)
             .join('\n'),
@@ -169,6 +203,6 @@ export async function POST(req: Request) {
   } catch (err) {
     // Keep live demos resilient: fall back to labelled mock feedback on API errors.
     console.error('Claude feedback failed, returning mock:', err)
-    return Response.json({ feedback: buildMockFeedback(profile, metrics) })
+    return Response.json({ feedback: buildMockFeedback(profile, metrics, language) })
   }
 }

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { listBookings, listClips, listCoachNotes } from '@/lib/store'
 import { computeStreak } from '@/lib/rating'
 import { usePlayers } from '@/lib/players-context'
+import { useTranslation } from '@/lib/i18n/context'
 import type { Clip, CoachNote, SessionBooking } from '@/lib/types'
 
 function isThisMonth(iso: string, now: Date): boolean {
@@ -14,6 +15,7 @@ function isThisMonth(iso: string, now: Date): boolean {
 }
 
 export function MetricCards() {
+  const { t } = useTranslation()
   const { activePlayer } = usePlayers()
   const [clips, setClips] = useState<Clip[]>([])
   const [notes, setNotes] = useState<CoachNote[]>([])
@@ -34,34 +36,34 @@ export function MetricCards() {
 
   const metrics = [
     {
-      label: 'Clips Uploaded',
+      label: t.home.uploads,
       value: String(clips.length),
-      unit: 'total',
-      delta: `+${clipsThisMonth} this month`,
+      unit: t.home.total,
+      delta: t.home.plusThisMonth(clipsThisMonth),
       icon: Film,
       tint: 'text-bronze',
     },
     {
-      label: 'Coach Notes',
+      label: t.home.coachNotes,
       value: String(notes.length),
-      unit: 'total',
-      delta: `+${notesThisMonth} this month`,
+      unit: t.home.total,
+      delta: t.home.plusThisMonth(notesThisMonth),
       icon: MessageSquareText,
       tint: 'text-sage',
     },
     {
-      label: 'Upcoming Sessions',
+      label: t.home.sessions,
       value: String(upcoming.length),
-      unit: 'booked',
-      delta: upcoming.length > 0 ? 'On the calendar' : 'None booked',
+      unit: t.home.booked,
+      delta: upcoming.length > 0 ? t.home.onCalendar : t.home.noneBooked,
       icon: CalendarClock,
       tint: 'text-rose',
     },
     {
-      label: 'Active Streak',
+      label: t.home.dayStreak,
       value: String(streak),
-      unit: 'days',
-      delta: streak >= 3 ? 'On fire' : streak > 0 ? 'Keep it up' : 'Start today',
+      unit: t.home.days,
+      delta: streak >= 3 ? t.home.onFire : streak > 0 ? t.home.keepItUp : t.home.startToday,
       icon: Flame,
       tint: 'text-bronze',
     },
