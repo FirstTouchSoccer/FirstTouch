@@ -103,9 +103,17 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   }
 
   async function resend() {
-    if (!pendingEmail) return
-    await resendVerificationEmail(pendingEmail)
-    setResent(true)
+    if (!pendingEmail || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      await resendVerificationEmail(pendingEmail)
+      setResent(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t.common.somethingWentWrong)
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (pendingEmail) {
@@ -120,10 +128,12 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
         <button
           type="button"
           onClick={resend}
-          className="mt-4 w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-semibold"
+          disabled={busy}
+          className="mt-4 w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
         >
           {resent ? t.auth.resentEmail : t.auth.resendEmail}
         </button>
+        {error && <p className="mt-2 text-xs font-medium text-destructive">{error}</p>}
         <Link href="/signup" className="mt-4 block text-xs text-muted-foreground underline underline-offset-2">
           {t.auth.backToSignup}
         </Link>
