@@ -415,6 +415,8 @@ export const en: Dictionary = {
     focusOption4: 'Finishing & shooting',
     focusOption5: 'Positioning & scanning',
     focusOption6: 'Sprint mechanics',
+    monthlyCapReached: "You've already got a session booked this month — cancel it first if you'd like to book a different one.",
+    bookingFailed: "Something went wrong booking that session. Please try again.",
   },
   feedbackHub: {
     backToCoaches: 'Back to coaches',

@@ -237,3 +237,44 @@ create policy "own billing_accounts" on public.billing_accounts
   for select using (auth.uid() = account_id);
 
 grant select on public.billing_accounts to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Booking cap: at most 1 *booked* session per calendar month per account.
+-- session_bookings is written directly from the client via the anon key --
+-- there's no server route in front of it the way /api/feedback fronts AI
+-- analyses -- so Postgres is the only layer a scripted client can't bypass.
+-- Cancelled bookings (status = 'cancelled') don't count, so cancelling frees
+-- up the month for a replacement booking.
+-- ---------------------------------------------------------------------------
+create or replace function public.enforce_booking_monthly_cap()
+returns trigger as $$
+declare
+  v_account_id uuid;
+  v_existing int;
+begin
+  if new.status <> 'booked' then
+    return new;
+  end if;
+
+  select account_id into v_account_id from public.players where id = new.player_id;
+
+  select count(*) into v_existing
+  from public.session_bookings sb
+  join public.players p on p.id = sb.player_id
+  where p.account_id = v_account_id
+    and sb.status = 'booked'
+    and date_trunc('month', sb.starts_at) = date_trunc('month', new.starts_at)
+    and sb.id <> new.id;
+
+  if v_existing >= 1 then
+    raise exception 'booking_monthly_cap_reached' using errcode = 'P0001';
+  end if;
+
+  return new;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+drop trigger if exists booking_monthly_cap on public.session_bookings;
+create trigger booking_monthly_cap
+  before insert on public.session_bookings
+  for each row execute function public.enforce_booking_monthly_cap();

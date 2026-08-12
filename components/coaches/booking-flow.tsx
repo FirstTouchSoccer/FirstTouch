@@ -86,6 +86,7 @@ export function BookingFlow({
   const [notes, setNotes] = useState('')
   const [booking, setBooking] = useState<SessionBooking | null>(null)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const toggleFocus = (f: string) =>
     setFocus((prev) =>
@@ -95,20 +96,27 @@ export function BookingFlow({
   async function confirmBooking() {
     if (!slot || !activePlayer) return
     setSaving(true)
+    setError(null)
     const [hours, minutes] = slot.split(':').map(Number)
     const startsAt = new Date(day)
     startsAt.setHours(hours, minutes, 0, 0)
-    const created = await createBooking(activePlayer.id, {
-      coachId: coach.id,
-      startsAt: startsAt.toISOString(),
-      durationMin: 45,
-      focus,
-      level,
-      notes: notes || null,
-    })
-    setBooking(created)
-    setSaving(false)
-    setStep('confirmed')
+    try {
+      const created = await createBooking(activePlayer.id, {
+        coachId: coach.id,
+        startsAt: startsAt.toISOString(),
+        durationMin: 45,
+        focus,
+        level,
+        notes: notes || null,
+      })
+      setBooking(created)
+      setStep('confirmed')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
+      setError(message.includes('booking_monthly_cap_reached') ? t.bookingFlow.monthlyCapReached : t.bookingFlow.bookingFailed)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -317,6 +325,12 @@ export function BookingFlow({
             placeholder={t.bookingFlow.notesPlaceholder}
             className="mt-2 w-full resize-none rounded-2xl border border-border bg-card p-4 text-sm outline-none placeholder:text-muted-foreground focus:border-primary"
           />
+
+          {error && (
+            <p className="mt-4 rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </p>
+          )}
 
           <button
             type="button"

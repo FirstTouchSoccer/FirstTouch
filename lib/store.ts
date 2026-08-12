@@ -649,7 +649,8 @@ export async function createBooking(
   const session = await requireSession()
   const full: SessionBooking = { ...booking, id: newId(), status: 'booked', createdAt: new Date().toISOString() }
   if (supabase) {
-    await supabase.from('session_bookings').insert(bookingToRow(full, playerId))
+    const { error } = await supabase.from('session_bookings').insert(bookingToRow(full, playerId))
+    if (error) throw new Error(error.message)
     return full
   }
   const bookings = readJson<SessionBooking[]>(bookingsKey(session.userId, playerId)) ?? []

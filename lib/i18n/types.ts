@@ -397,6 +397,8 @@ export interface Dictionary {
     focusOption4: string
     focusOption5: string
     focusOption6: string
+    monthlyCapReached: string
+    bookingFailed: string
   }
   feedbackHub: {
     backToCoaches: string
