@@ -6,6 +6,7 @@ import type {
   BillingStatus,
   Clip,
   CoachNote,
+  ConsentBasis,
   ExperienceLevel,
   Player,
   Session,
@@ -72,7 +73,8 @@ function buildPlayer(
   name: string,
   age: number | null,
   experience: ExperienceLevel,
-  consentedAt: string
+  consentedAt: string,
+  consentBasis: ConsentBasis
 ): Player {
   return {
     id,
@@ -85,6 +87,7 @@ function buildPlayer(
     location: '',
     attributes: { pace: 60, shooting: 60, dribbling: 60, passing: 60, physicality: 60 },
     consentedAt,
+    consentBasis,
     createdAt: new Date().toISOString(),
   }
 }
@@ -125,7 +128,8 @@ export async function signUp(
   playerName: string,
   age: number | null,
   experience: ExperienceLevel,
-  consentedAt: string
+  consentedAt: string,
+  consentBasis: ConsentBasis
 ): Promise<SignUpResult> {
   if (supabase) {
     const { data, error } = await supabase.auth.signUp({
@@ -138,6 +142,7 @@ export async function signUp(
           player_age: age,
           player_experience: experience,
           consented_at: consentedAt,
+          consent_basis: consentBasis,
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -146,7 +151,7 @@ export async function signUp(
     const user = data.user
     if (!user) throw new Error('Sign-up succeeded but no user returned.')
     if (!data.session) return { status: 'verification_required', email }
-    const player = buildPlayer(newId(), user.id, playerName, age, experience, consentedAt)
+    const player = buildPlayer(newId(), user.id, playerName, age, experience, consentedAt, consentBasis)
     await supabase.from('players').insert(playerToRow(player))
     return { status: 'signed_in', session: { userId: user.id, email } }
   }
@@ -154,7 +159,7 @@ export async function signUp(
   const session: Session = { userId: `demo-${email.toLowerCase()}`, email }
   writeJson(SESSION_KEY, session)
   if (!readJson<Player[]>(playersKey(session.userId))) {
-    const player = buildPlayer(newId(), session.userId, playerName, age, experience, consentedAt)
+    const player = buildPlayer(newId(), session.userId, playerName, age, experience, consentedAt, consentBasis)
     writeJson(playersKey(session.userId), [player])
     writeJson(clipsKey(session.userId, player.id), [])
     writeJson(notesKey(session.userId, player.id), [])
@@ -185,7 +190,7 @@ export async function signIn(email: string, password: string): Promise<Session> 
   writeJson(SESSION_KEY, session)
   if (!readJson<Player[]>(playersKey(session.userId))) {
     const guessName = email.split('@')[0]
-    await signUp(email, password, guessName, guessName, null, 'developing', new Date().toISOString())
+    await signUp(email, password, guessName, guessName, null, 'developing', new Date().toISOString(), 'guardian')
   }
   return session
 }
@@ -207,7 +212,8 @@ export async function signInWithDemoAccount(): Promise<Session> {
         'Diego Marín',
         17,
         'club',
-        new Date().toISOString()
+        new Date().toISOString(),
+        'guardian'
       )
       if (result.status === 'signed_in') return result.session
       throw new Error('The demo account needs email verification on this Supabase project.')
@@ -252,7 +258,13 @@ export async function listPlayers(): Promise<Player[]> {
     // getProfile() used.
     const { data: userData } = await supabase.auth.getUser()
     const meta = userData.user?.user_metadata as
-      | { player_name?: string; player_age?: number | null; player_experience?: ExperienceLevel; consented_at?: string }
+      | {
+          player_name?: string
+          player_age?: number | null
+          player_experience?: ExperienceLevel
+          consented_at?: string
+          consent_basis?: ConsentBasis
+        }
       | undefined
     if (meta?.player_name && meta?.consented_at) {
       const player = await createPlayer({
@@ -260,6 +272,7 @@ export async function listPlayers(): Promise<Player[]> {
         age: meta.player_age ?? null,
         experience: meta.player_experience ?? 'developing',
         consentedAt: meta.consented_at,
+        consentBasis: meta.consent_basis ?? 'guardian',
       })
       return [player]
     }
@@ -278,9 +291,18 @@ export async function createPlayer(input: {
   age: number | null
   experience: ExperienceLevel
   consentedAt: string
+  consentBasis?: ConsentBasis
 }): Promise<Player> {
   const session = await requireSession()
-  const player = buildPlayer(newId(), session.userId, input.name, input.age, input.experience, input.consentedAt)
+  const player = buildPlayer(
+    newId(),
+    session.userId,
+    input.name,
+    input.age,
+    input.experience,
+    input.consentedAt,
+    input.consentBasis ?? 'guardian'
+  )
   if (supabase) {
     await supabase.from('players').insert(playerToRow(player))
     return player
@@ -327,6 +349,7 @@ function playerToRow(p: Player) {
     passing: p.attributes.passing,
     physicality: p.attributes.physicality,
     consented_at: p.consentedAt,
+    consent_basis: p.consentBasis,
   }
 }
 
@@ -348,6 +371,7 @@ function rowToPlayer(row: any): Player {
       physicality: row.physicality,
     },
     consentedAt: row.consented_at,
+    consentBasis: row.consent_basis ?? 'guardian',
     createdAt: row.created_at,
   }
 }

@@ -17,13 +17,19 @@ export const emptyPlayerFields: PlayerFieldsValues = {
   experience: 'new',
 }
 
-/** First/last name + age + experience — shared by signup and "+ Add player". */
+/**
+ * First/last name + age + experience — shared by signup and "+ Add player".
+ * `self` swaps the labels and age bounds for the 18+ self-registration path,
+ * where this form describes the account holder rather than a child.
+ */
 export function PlayerFieldsForm({
   values,
   onChange,
+  self = false,
 }: {
   values: PlayerFieldsValues
   onChange: (values: PlayerFieldsValues) => void
+  self?: boolean
 }) {
   const { t } = useTranslation()
   return (
@@ -32,7 +38,7 @@ export function PlayerFieldsForm({
         <input
           required
           type="text"
-          placeholder={t.playerFields.firstName}
+          placeholder={self ? t.auth.firstName : t.playerFields.firstName}
           value={values.firstName}
           onChange={(e) => onChange({ ...values, firstName: e.target.value })}
           className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
@@ -40,7 +46,7 @@ export function PlayerFieldsForm({
         <input
           required
           type="text"
-          placeholder={t.playerFields.lastName}
+          placeholder={self ? t.auth.lastName : t.playerFields.lastName}
           value={values.lastName}
           onChange={(e) => onChange({ ...values, lastName: e.target.value })}
           className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
@@ -50,8 +56,8 @@ export function PlayerFieldsForm({
         required
         type="number"
         inputMode="numeric"
-        min={4}
-        max={19}
+        min={self ? 18 : 4}
+        max={self ? 99 : 19}
         placeholder={t.playerFields.age}
         value={values.age}
         onChange={(e) => onChange({ ...values, age: e.target.value })}

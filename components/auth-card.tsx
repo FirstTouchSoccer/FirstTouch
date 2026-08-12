@@ -18,6 +18,7 @@ import { useTranslation } from '@/lib/i18n/context'
 export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
   const router = useRouter()
   const { t } = useTranslation()
+  const [registrantType, setRegistrantType] = useState<'guardian' | 'self'>('guardian')
   const [accountFirstName, setAccountFirstName] = useState('')
   const [accountLastName, setAccountLastName] = useState('')
   const [player, setPlayer] = useState<PlayerFieldsValues>(emptyPlayerFields)
@@ -63,8 +64,9 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
     try {
       if (mode === 'signup') {
         if (!consented) return
-        const accountName = `${accountFirstName.trim()} ${accountLastName.trim()}`.trim()
         const playerName = `${player.firstName.trim()} ${player.lastName.trim()}`.trim()
+        const accountName =
+          registrantType === 'self' ? playerName : `${accountFirstName.trim()} ${accountLastName.trim()}`.trim()
         const result = await signUp(
           email,
           password,
@@ -72,7 +74,8 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           playerName,
           player.age ? Number(player.age) : null,
           player.experience,
-          new Date().toISOString()
+          new Date().toISOString(),
+          registrantType
         )
         if (result.status === 'verification_required') {
           setPendingEmail(result.email)
@@ -177,30 +180,54 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
       <form onSubmit={submit} className="mt-5 flex flex-col gap-3">
         {mode === 'signup' && (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.auth.yourInfo}</p>
-            <div className="flex gap-3">
-              <input
-                required
-                type="text"
-                placeholder={t.auth.firstName}
-                value={accountFirstName}
-                onChange={(e) => setAccountFirstName(e.target.value)}
-                className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
-              />
-              <input
-                required
-                type="text"
-                placeholder={t.auth.lastName}
-                value={accountLastName}
-                onChange={(e) => setAccountLastName(e.target.value)}
-                className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
-              />
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t.auth.registeringForLabel}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {(['guardian', 'self'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setRegistrantType(type)}
+                  className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                    registrantType === type
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background text-foreground'
+                  }`}
+                >
+                  {type === 'self' ? t.auth.registeringForSelf : t.auth.registeringForChild}
+                </button>
+              ))}
             </div>
 
-            <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t.auth.addYourPlayer}
-            </p>
-            <PlayerFieldsForm values={player} onChange={setPlayer} />
+            {registrantType === 'guardian' && (
+              <>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.auth.yourInfo}</p>
+                <div className="flex gap-3">
+                  <input
+                    required
+                    type="text"
+                    placeholder={t.auth.firstName}
+                    value={accountFirstName}
+                    onChange={(e) => setAccountFirstName(e.target.value)}
+                    className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
+                  />
+                  <input
+                    required
+                    type="text"
+                    placeholder={t.auth.lastName}
+                    value={accountLastName}
+                    onChange={(e) => setAccountLastName(e.target.value)}
+                    className="w-1/2 rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
+                  />
+                </div>
+
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t.auth.addYourPlayer}
+                </p>
+              </>
+            )}
+            <PlayerFieldsForm values={player} onChange={setPlayer} self={registrantType === 'self'} />
           </>
         )}
         <input
@@ -220,7 +247,9 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           className="rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
         />
 
-        {mode === 'signup' && <ConsentCheckbox checked={consented} onChange={setConsented} />}
+        {mode === 'signup' && (
+          <ConsentCheckbox checked={consented} onChange={setConsented} variant={registrantType} />
+        )}
 
         {error && <p className="text-xs font-medium text-destructive">{error}</p>}
 

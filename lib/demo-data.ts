@@ -27,6 +27,7 @@ export function seedDemoPlayer(accountId: string): Player {
       physicality: 68,
     },
     consentedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+    consentBasis: 'guardian',
     createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
   }
 }

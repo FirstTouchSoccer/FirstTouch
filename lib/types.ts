@@ -36,6 +36,12 @@ export function experienceLabel(level: ExperienceLevel): string {
   return EXPERIENCE_LEVELS.find((l) => l.value === level)?.label ?? level
 }
 
+// Who gave consent for this player's profile: a parent/guardian registering
+// a child, or the player themselves (18+) registering their own account.
+// Recorded per-player since it's the legal basis for that player's data --
+// see the "Who can create an account" section of the Terms of Service.
+export type ConsentBasis = 'guardian' | 'self'
+
 export interface Player {
   id: string
   accountId: string
@@ -47,6 +53,7 @@ export interface Player {
   location: string
   attributes: Attributes
   consentedAt: string
+  consentBasis: ConsentBasis
   createdAt: string
 }
 

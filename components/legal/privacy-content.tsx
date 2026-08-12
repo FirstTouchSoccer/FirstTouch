@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useTranslation } from '@/lib/i18n/context'
 
-const LAST_UPDATED_ISO = '2026-08-07'
+const LAST_UPDATED_ISO = '2026-08-11'
 
 export function PrivacyContent() {
   const { language } = useTranslation()
@@ -13,7 +13,7 @@ export function PrivacyContent() {
       <>
         <h1 className="text-xl font-bold tracking-tight">Политика конфиденциальности</h1>
         <p className="mt-1 text-xs text-muted-foreground">
-          <time dateTime={LAST_UPDATED_ISO}>Обновлено 7 августа 2026 г.</time>
+          <time dateTime={LAST_UPDATED_ISO}>Обновлено 11 августа 2026 г.</time>
         </p>
 
         <div className="prose-sm mt-6 flex flex-col gap-5 text-sm leading-relaxed text-foreground">
@@ -114,6 +114,20 @@ export function PrivacyContent() {
           </section>
 
           <section>
+            <h2 className="text-sm font-bold">Ваши права, если вам 18 лет или больше</h2>
+            <p className="mt-1.5 text-muted-foreground">
+              Если вы зарегистрировали собственный аккаунт как игрок 18 лет или старше, на вас напрямую
+              распространяются те же практические права — на общих основаниях защиты
+              персональных данных, а не по COPPA (который касается только детей младше 13 лет): вы можете в
+              любой момент посмотреть личную информацию, которую мы о вас собрали, запросить её удаление и
+              прекратить любой дальнейший сбор — просто написав нам (см. ниже) или закрыв аккаунт. Как и
+              выше, мы собираем только то, что нужно для работы уже используемых вами функций, не
+              обуславливаем доступ к основным функциям сбором чего-то большего, и пока обрабатываем такие
+              запросы вручную — до появления кнопки самостоятельного удаления.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-sm font-bold">Безопасность</h2>
             <p className="mt-1.5 text-muted-foreground">
               Мы используем отраслевые стандартные меры — шифрованные соединения, доступ с ограниченными
@@ -147,7 +161,7 @@ export function PrivacyContent() {
     <>
       <h1 className="text-xl font-bold tracking-tight">Privacy Policy</h1>
       <p className="mt-1 text-xs text-muted-foreground">
-        <time dateTime={LAST_UPDATED_ISO}>Last updated August 7, 2026</time>
+        <time dateTime={LAST_UPDATED_ISO}>Last updated August 11, 2026</time>
       </p>
 
       <div className="prose-sm mt-6 flex flex-col gap-5 text-sm leading-relaxed text-foreground">
@@ -243,6 +257,19 @@ export function PrivacyContent() {
             notes, bookings), we don&apos;t condition access to core features on collecting more than
             that, and we don&apos;t yet have a self-serve delete button in the app itself, so these
             requests are handled manually — we&apos;ll confirm once it&apos;s done.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-sm font-bold">Your rights, if you&apos;re 18 or older</h2>
+          <p className="mt-1.5 text-muted-foreground">
+            If you registered your own account as an 18-or-older player, the same practical rights apply to
+            you directly — on general data-privacy grounds rather than COPPA, which only covers children
+            under 13. You can at any time: review the personal information we&apos;ve collected about you,
+            request that we delete it, and stop any further collection — simply by emailing us (see below)
+            or closing your account. As above, we only collect what&apos;s needed to run the features
+            you&apos;ve used, we don&apos;t condition access to core features on collecting more than that,
+            and these requests are handled manually until a self-serve option exists.
           </p>
         </section>
 

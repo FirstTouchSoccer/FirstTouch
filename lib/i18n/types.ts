@@ -152,8 +152,12 @@ export interface Dictionary {
     resendEmail: string
     resentEmail: string
     backToSignup: string
-    consentPrefix: string
+    consentPrefixGuardian: string
+    consentPrefixSelf: string
     consentMiddle: string
+    registeringForLabel: string
+    registeringForSelf: string
+    registeringForChild: string
     demoStartError: string
   }
   playerFields: {

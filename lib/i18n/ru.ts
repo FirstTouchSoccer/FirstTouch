@@ -164,9 +164,12 @@ export const ru: Dictionary = {
     resendEmail: 'Отправить письмо ещё раз',
     resentEmail: 'Отправлено снова',
     backToSignup: 'Назад к регистрации',
-    consentPrefix:
-      'Я подтверждаю, что являюсь родителем или законным опекуном этого игрока, либо сам являюсь игроком старше 18 лет, и принимаю ',
+    consentPrefixGuardian: 'Я подтверждаю, что являюсь родителем или законным опекуном этого игрока, и принимаю ',
+    consentPrefixSelf: 'Я подтверждаю, что мне есть 18 лет, и принимаю ',
     consentMiddle: ' и ',
+    registeringForLabel: 'Для кого этот аккаунт?',
+    registeringForSelf: 'Для себя (18+)',
+    registeringForChild: 'Для моего ребёнка',
     demoStartError: 'Не удалось запустить демо-аккаунт.',
   },
   playerFields: {

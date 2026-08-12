@@ -20,8 +20,17 @@ create table if not exists public.players (
   -- (signup, or "+ Add player" later) -- the actual COPPA-relevant consent record.
   -- Never a column default; every player must go through the consent checkbox.
   consented_at timestamptz not null,
+  -- Who gave consent for this row: 'guardian' (parent/guardian registering a
+  -- child) or 'self' (an 18+ player registering their own account). See the
+  -- "Who can create an account" section of the Terms of Service.
+  consent_basis text not null default 'guardian',
   created_at timestamptz not null default now()
 );
+
+-- Existing installs: add the column if this table already existed before
+-- self-registration was introduced. Backfill is a no-op -- every player row
+-- created before this feature existed was guardian-consented by definition.
+alter table public.players add column if not exists consent_basis text not null default 'guardian';
 
 create table if not exists public.clips (
   id uuid primary key,

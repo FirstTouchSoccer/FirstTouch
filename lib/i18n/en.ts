@@ -163,9 +163,12 @@ export const en: Dictionary = {
     resendEmail: 'Resend email',
     resentEmail: 'Sent again',
     backToSignup: 'Back to signup',
-    consentPrefix:
-      "I confirm I am this player's parent or legal guardian, or I am the player and I'm 18 or older, and I agree to the ",
+    consentPrefixGuardian: "I confirm I am this player's parent or legal guardian, and I agree to the ",
+    consentPrefixSelf: "I confirm I'm 18 or older and I agree to the ",
     consentMiddle: ' and ',
+    registeringForLabel: "Who's this account for?",
+    registeringForSelf: 'Myself (18+)',
+    registeringForChild: 'My child',
     demoStartError: 'Could not start the demo account.',
   },
   playerFields: {

@@ -12,9 +12,11 @@ import { useTranslation } from '@/lib/i18n/context'
 export function ConsentCheckbox({
   checked,
   onChange,
+  variant = 'guardian',
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
+  variant?: 'guardian' | 'self'
 }) {
   const { t } = useTranslation()
 
@@ -28,7 +30,7 @@ export function ConsentCheckbox({
         className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
       />
       <span>
-        {t.auth.consentPrefix}
+        {variant === 'self' ? t.auth.consentPrefixSelf : t.auth.consentPrefixGuardian}
         <Link href="/terms" target="_blank" className="font-semibold text-foreground underline underline-offset-2">
           {t.auth.termsOfService}
         </Link>
