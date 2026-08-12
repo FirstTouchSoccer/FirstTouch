@@ -165,7 +165,11 @@ export async function signUp(
 
 export async function resendVerificationEmail(email: string): Promise<void> {
   if (!supabase) return
-  await supabase.auth.resend({ type: 'signup', email })
+  await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+  })
 }
 
 export async function signIn(email: string, password: string): Promise<Session> {
