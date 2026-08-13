@@ -247,6 +247,15 @@ export function AuthCard({ mode }: { mode: 'login' | 'signup' }) {
           className="rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none focus-visible:border-primary"
         />
 
+        {mode === 'login' && !isDemoMode && (
+          <Link
+            href="/forgot-password"
+            className="-mt-1 self-end text-xs font-semibold text-muted-foreground underline underline-offset-2"
+          >
+            {t.auth.forgotPassword}
+          </Link>
+        )}
+
         {mode === 'signup' && (
           <ConsentCheckbox checked={consented} onChange={setConsented} variant={registrantType} />
         )}

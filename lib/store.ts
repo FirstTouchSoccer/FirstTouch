@@ -178,6 +178,21 @@ export async function resendVerificationEmail(email: string): Promise<void> {
   if (error) throw new Error(mapAuthError(error.message))
 }
 
+export async function requestPasswordReset(email: string): Promise<void> {
+  if (!supabase) throw new Error('Password reset is not available in this preview.')
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/auth/reset-password`,
+  })
+  if (error) throw new Error(mapAuthError(error.message))
+}
+
+/** Called from /auth/reset-password once the recovery link has established a session. */
+export async function updatePassword(newPassword: string): Promise<void> {
+  if (!supabase) throw new Error('Password reset is not available in this preview.')
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(mapAuthError(error.message))
+}
+
 export async function signIn(email: string, password: string): Promise<Session> {
   if (supabase) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })

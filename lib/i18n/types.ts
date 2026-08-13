@@ -159,6 +159,7 @@ export interface Dictionary {
     registeringForSelf: string
     registeringForChild: string
     demoStartError: string
+    forgotPassword: string
   }
   playerFields: {
     firstName: string
@@ -171,6 +172,31 @@ export interface Dictionary {
     confirmed: string
     expiredError: string
     goToLogin: string
+  }
+  forgotPassword: {
+    title: string
+    subtitle: string
+    emailPlaceholder: string
+    submitBtn: string
+    backToLogin: string
+    checkEmailTitle: string
+    checkEmailBody: string
+    resendEmail: string
+    resentEmail: string
+  }
+  resetPassword: {
+    title: string
+    subtitle: string
+    newPasswordPlaceholder: string
+    confirmPasswordPlaceholder: string
+    submitBtn: string
+    mismatchError: string
+    tooShortError: string
+    confirmingLink: string
+    expiredLinkError: string
+    goToForgotPassword: string
+    successTitle: string
+    successBody: string
   }
   home: {
     greeting: string
@@ -350,6 +376,15 @@ export interface Dictionary {
     manageBilling: string
     renews: string
     proBadge: string
+  }
+  upgradePromo: {
+    homeHeadline: string
+    homeBody: string
+    vaultHeadline: string
+    vaultBody: string
+    coachesHeadline: string
+    coachesBody: string
+    cta: string
   }
   addPlayer: {
     title: string

@@ -12,13 +12,14 @@ import {
   type Video,
 } from '@/components/vault/vault-data'
 import { VideoPlayer, type PlayerTarget } from '@/components/vault/video-player'
-import { listClips, resolveVideoUrl } from '@/lib/store'
+import { UpgradePromoCard } from '@/components/upgrade-promo-card'
+import { listClips, isDemoMode, resolveVideoUrl } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
 import { useTranslation } from '@/lib/i18n/context'
 import type { Clip } from '@/lib/types'
 
 export function VaultTab() {
-  const { activePlayer } = usePlayers()
+  const { activePlayer, billing } = usePlayers()
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [active, setActive] = useState<Category | 'All'>('All')
@@ -120,6 +121,13 @@ export function VaultTab() {
               </button>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Upgrade to Pro */}
+      {!isDemoMode && !billing.isEntitled && (
+        <section className="px-5 pt-6" aria-label="Upgrade to Pro">
+          <UpgradePromoCard headline={t.upgradePromo.vaultHeadline} body={t.upgradePromo.vaultBody} />
         </section>
       )}
 

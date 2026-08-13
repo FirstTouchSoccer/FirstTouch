@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Star, BadgeCheck, MessageSquareText, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { coaches, coachById, specializationFilters, type Coach } from '@/lib/coaches'
-import { listCoachNotes } from '@/lib/store'
+import { listCoachNotes, isDemoMode } from '@/lib/store'
 import { usePlayers } from '@/lib/players-context'
 import { useTranslation } from '@/lib/i18n/context'
 import { tf } from '@/lib/i18n/format'
@@ -13,6 +13,7 @@ import type { CoachNote } from '@/lib/types'
 import { PlayerAvatar } from '@/components/player-avatar'
 import { FeedbackHub } from '@/components/coaches/feedback-hub'
 import { BookingFlow } from '@/components/coaches/booking-flow'
+import { UpgradePromoCard } from '@/components/upgrade-promo-card'
 
 type View =
   | { name: 'directory' }
@@ -29,7 +30,7 @@ const specializationKey: Record<(typeof specializationFilters)[number], keyof Di
 }
 
 export function CoachesTab() {
-  const { activePlayer } = usePlayers()
+  const { activePlayer, billing } = usePlayers()
   const { t } = useTranslation()
   const [view, setView] = useState<View>({ name: 'directory' })
   const [filter, setFilter] =
@@ -105,6 +106,13 @@ export function CoachesTab() {
             <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
           </button>
         </div>
+      )}
+
+      {/* Upgrade to Pro */}
+      {!isDemoMode && !billing.isEntitled && (
+        <section className="mt-4 px-5" aria-label="Upgrade to Pro">
+          <UpgradePromoCard headline={t.upgradePromo.coachesHeadline} body={t.upgradePromo.coachesBody} />
+        </section>
       )}
 
       {/* Specialization filters */}

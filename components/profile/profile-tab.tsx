@@ -8,9 +8,9 @@ export function ProfileTab() {
   return (
     <div className="animate-in fade-in duration-500">
       <ProfileHeader />
+      <BillingCard />
       <SkillRadar />
       <MediaGrid />
-      <BillingCard />
       <ActivityHistory />
     </div>
   )

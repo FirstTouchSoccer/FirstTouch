@@ -170,6 +170,7 @@ export const en: Dictionary = {
     registeringForSelf: 'Myself (18+)',
     registeringForChild: 'My child',
     demoStartError: 'Could not start the demo account.',
+    forgotPassword: 'Forgot password?',
   },
   playerFields: {
     firstName: "Player's first name",
@@ -183,6 +184,33 @@ export const en: Dictionary = {
     expiredError:
       'This link has expired or was already used. If your email app scans links automatically, your account may already be confirmed — try logging in directly.',
     goToLogin: 'Go to login',
+  },
+  forgotPassword: {
+    title: 'Reset your password',
+    subtitle: "Enter the email on your account and we'll send you a reset link.",
+    emailPlaceholder: 'Email',
+    submitBtn: 'Send reset link',
+    backToLogin: 'Back to login',
+    checkEmailTitle: 'Check your email',
+    checkEmailBody:
+      'If an account exists for {email}, a reset link is on its way. Click it to choose a new password — this page will continue automatically once you do.',
+    resendEmail: 'Resend email',
+    resentEmail: 'Sent again',
+  },
+  resetPassword: {
+    title: 'Choose a new password',
+    subtitle: 'Make it something you have not used on FirstTouch before.',
+    newPasswordPlaceholder: 'New password',
+    confirmPasswordPlaceholder: 'Confirm new password',
+    submitBtn: 'Update password',
+    mismatchError: "Those passwords don't match.",
+    tooShortError: 'Use at least 8 characters.',
+    confirmingLink: 'Confirming your reset link…',
+    expiredLinkError:
+      'This link has expired or was already used. If your email app scans links automatically, that can use it up before you click it — request a new one below.',
+    goToForgotPassword: 'Request a new link',
+    successTitle: 'Password updated',
+    successBody: "You're all set — taking you in…",
   },
   home: {
     greeting: 'Good afternoon,',
@@ -367,6 +395,15 @@ export const en: Dictionary = {
     manageBilling: 'Manage Billing',
     renews: 'Renews {date}',
     proBadge: 'FirstTouch Pro',
+  },
+  upgradePromo: {
+    homeHeadline: 'Get the full picture',
+    homeBody: 'Pro unlocks up to 20 AI clip analyses and 60 coach-chat messages a month, so trends show up before you have to ask.',
+    vaultHeadline: 'More clips, more insight',
+    vaultBody: "You've already got the footage — Pro turns up to 20 clips a month into full AI breakdowns instead of just a library.",
+    coachesHeadline: 'Walk into every session prepped',
+    coachesBody: 'Pro members review up to 20 AI analyses and 60 coach-chat answers a month before they ever book — so the session starts further along.',
+    cta: 'Upgrade to Pro — $20/mo',
   },
   addPlayer: {
     title: 'Add a player',
